@@ -36,6 +36,7 @@ const overridesMap = computed(() => {
 
 const drafts = reactive<Record<string, string>>({});
 const savingField = ref<string | null>(null);
+const savedField = ref<string | null>(null);
 
 function fieldKey(key: string, locale: Locale) {
   return `${key}:${locale}`;
@@ -44,7 +45,9 @@ function fieldKey(key: string, locale: Locale) {
 function valueFor(key: string, locale: Locale): string {
   const draft = drafts[fieldKey(key, locale)];
   if (draft !== undefined) return draft;
-  return overridesMap.value.get(key)?.get(locale) ?? defaults[locale][key];
+  // Falls back to the English default if a key was added without a Lao
+  // translation yet, matching vue-i18n's own fallbackLocale behavior at runtime.
+  return overridesMap.value.get(key)?.get(locale) ?? defaults[locale][key] ?? defaults.en[key];
 }
 
 function isOverridden(key: string, locale: Locale): boolean {
@@ -57,12 +60,17 @@ function onInput(key: string, locale: Locale, value: string) {
 
 async function save(key: string, locale: Locale) {
   const value = valueFor(key, locale);
-  savingField.value = fieldKey(key, locale);
+  const field = fieldKey(key, locale);
+  savingField.value = field;
   try {
     await translationsApi.adminUpsert(key, locale, value);
     setMessageLive(locale, key, value);
-    delete drafts[fieldKey(key, locale)];
+    delete drafts[field];
     await queryClient.invalidateQueries({ queryKey: ["admin-translations"] });
+    savedField.value = field;
+    setTimeout(() => {
+      if (savedField.value === field) savedField.value = null;
+    }, 2000);
   } finally {
     savingField.value = null;
   }
@@ -89,6 +97,11 @@ async function reset(key: string, locale: Locale) {
 
       <div v-if="isLoading" class="mt-6 text-sm text-gray-500">…</div>
       <div v-else class="mt-6 divide-y divide-gray-100">
+        <div class="pb-2 grid grid-cols-[12rem_1fr_1fr] gap-4 text-xs font-medium text-gray-500 uppercase tracking-wide">
+          <div>{{ t("adminTranslations.key") }}</div>
+          <div>{{ t("adminTranslations.english") }}</div>
+          <div>{{ t("adminTranslations.lao") }}</div>
+        </div>
         <div v-for="key in allKeys" :key="key" class="py-3 grid grid-cols-[12rem_1fr_1fr] gap-4 items-start">
           <div class="font-mono text-xs text-gray-500 pt-2">{{ key }}</div>
 
@@ -106,8 +119,11 @@ async function reset(key: string, locale: Locale) {
                 @click="save(key, 'en')"
               />
             </div>
+            <span v-if="savedField === fieldKey(key, 'en')" class="mt-1 inline-block text-xs text-green-600">{{
+              t("adminTranslations.saved")
+            }}</span>
             <button
-              v-if="isOverridden(key, 'en')"
+              v-else-if="isOverridden(key, 'en')"
               class="mt-1 text-xs text-gray-400 hover:text-gray-600 underline"
               @click="reset(key, 'en')"
             >
@@ -132,8 +148,11 @@ async function reset(key: string, locale: Locale) {
                 @click="save(key, 'lo')"
               />
             </div>
+            <span v-if="savedField === fieldKey(key, 'lo')" class="mt-1 inline-block text-xs text-green-600">{{
+              t("adminTranslations.saved")
+            }}</span>
             <button
-              v-if="isOverridden(key, 'lo')"
+              v-else-if="isOverridden(key, 'lo')"
               class="mt-1 text-xs text-gray-400 hover:text-gray-600 underline"
               @click="reset(key, 'lo')"
             >
