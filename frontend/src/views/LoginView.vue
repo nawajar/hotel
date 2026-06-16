@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
 import InputText from "primevue/inputtext";
 import Password from "primevue/password";
 import Button from "primevue/button";
@@ -8,6 +9,7 @@ import { useLoginMutation } from "@/composables/useAuthQueries";
 import { ApiError } from "@/api/client";
 
 const router = useRouter();
+const { t } = useI18n();
 const email = ref("");
 const password = ref("");
 const errorMessage = ref("");
@@ -20,8 +22,7 @@ async function handleSubmit() {
     await loginMutation.mutateAsync({ email: email.value, password: password.value });
     router.push({ name: "dashboard" });
   } catch (err) {
-    errorMessage.value =
-      err instanceof ApiError ? err.message : "Something went wrong. Please try again.";
+    errorMessage.value = err instanceof ApiError ? err.message : t("login.genericError");
   }
 }
 </script>
@@ -32,10 +33,12 @@ async function handleSubmit() {
       class="w-full max-w-sm bg-white p-8 rounded-lg border border-gray-200 shadow-sm"
       @submit.prevent="handleSubmit"
     >
-      <h1 class="text-xl font-semibold text-gray-900 mb-6">Sign in</h1>
+      <h1 class="text-xl font-semibold text-gray-900 mb-6">{{ t("login.title") }}</h1>
 
       <div class="mb-4">
-        <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+        <label for="email" class="block text-sm font-medium text-gray-700 mb-1">{{
+          t("login.email")
+        }}</label>
         <InputText
           id="email"
           v-model="email"
@@ -46,7 +49,9 @@ async function handleSubmit() {
       </div>
 
       <div class="mb-6">
-        <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+        <label for="password" class="block text-sm font-medium text-gray-700 mb-1">{{
+          t("login.password")
+        }}</label>
         <Password
           id="password"
           v-model="password"
@@ -61,7 +66,7 @@ async function handleSubmit() {
 
       <Button
         type="submit"
-        label="Sign in"
+        :label="t('login.submit')"
         :loading="loginMutation.isPending.value"
         class="w-full rounded-md bg-gray-900 text-white py-2 text-sm font-medium hover:bg-gray-800 disabled:opacity-50"
       />

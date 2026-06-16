@@ -1,0 +1,39 @@
+{
+  "nav": {
+    "brand": "Hotel",
+    "dashboard": "Dashboard",
+    "admin": "Admin",
+    "translations": "Translations",
+    "logout": "Logout"
+  },
+  "login": {
+    "title": "Sign in",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Sign in",
+    "genericError": "Something went wrong. Please try again."
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome, {name}.",
+    "signedInAs": "You're signed in as {role}."
+  },
+  "admin": {
+    "title": "Admin",
+    "description": "Admin-only area.",
+    "pingButton": "Ping /api/admin/ping",
+    "pingOk": "ok: {ok}",
+    "pingError": "error {status}: {message}"
+  },
+  "adminTranslations": {
+    "title": "Translations",
+    "description": "Override any label shown on the frontend, per language. Leave a field blank and reset it to fall back to the default.",
+    "key": "Key",
+    "english": "English",
+    "lao": "Lao",
+    "save": "Save",
+    "reset": "Reset",
+    "saved": "Saved",
+    "default": "(default)"
+  }
+}

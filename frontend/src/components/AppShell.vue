@@ -1,9 +1,16 @@
 <script setup lang="ts">
 import { useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
 import { useAuthStore } from "@/stores/auth";
+import { setLocale, type Locale } from "@/i18n";
 
 const router = useRouter();
+const { t, locale } = useI18n();
 const authStore = useAuthStore();
+
+function handleLocaleChange(event: Event) {
+  setLocale((event.target as HTMLSelectElement).value as Locale);
+}
 
 async function handleLogout() {
   await authStore.logout();
@@ -16,13 +23,13 @@ async function handleLogout() {
     <nav class="bg-white border-b border-gray-200">
       <div class="max-w-5xl mx-auto px-4 flex items-center justify-between h-14">
         <div class="flex items-center gap-6">
-          <span class="font-semibold text-gray-900">Hotel</span>
+          <span class="font-semibold text-gray-900">{{ t("nav.brand") }}</span>
           <router-link
             to="/dashboard"
             class="text-sm text-gray-600 hover:text-gray-900"
             active-class="text-gray-900 font-medium"
           >
-            Dashboard
+            {{ t("nav.dashboard") }}
           </router-link>
           <router-link
             v-if="authStore.isAdmin"
@@ -30,16 +37,32 @@ async function handleLogout() {
             class="text-sm text-gray-600 hover:text-gray-900"
             active-class="text-gray-900 font-medium"
           >
-            Admin
+            {{ t("nav.admin") }}
+          </router-link>
+          <router-link
+            v-if="authStore.isAdmin"
+            to="/admin/translations"
+            class="text-sm text-gray-600 hover:text-gray-900"
+            active-class="text-gray-900 font-medium"
+          >
+            {{ t("nav.translations") }}
           </router-link>
         </div>
         <div class="flex items-center gap-4">
+          <select
+            :value="locale"
+            class="text-sm border border-gray-300 rounded-md px-2 py-1 text-gray-700"
+            @change="handleLocaleChange"
+          >
+            <option value="en">EN</option>
+            <option value="lo">ລາວ</option>
+          </select>
           <span class="text-sm text-gray-500">{{ authStore.user?.name }}</span>
           <button
             class="text-sm px-3 py-1.5 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-100"
             @click="handleLogout"
           >
-            Logout
+            {{ t("nav.logout") }}
           </button>
         </div>
       </div>

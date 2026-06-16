@@ -1,7 +1,7 @@
 # Hotel Management System
 
-Single-property internal staff tool. This phase: scaffold + authentication only
-(no bookings/rooms/guests yet).
+Single-property internal staff tool. This phase: scaffold + authentication +
+admin-editable UI translations (no bookings/rooms/guests yet).
 
 ## Stack
 
@@ -10,6 +10,26 @@ Single-property internal staff tool. This phase: scaffold + authentication only
 - **Auth**: session-based (tower-sessions + Postgres store), argon2 password hashing. No JWT.
 - **State/data**: Pinia (auth store), TanStack Vue Query (server calls)
 - **UI**: PrimeVue (unstyled) + Tailwind CSS
+- **i18n**: vue-i18n, English + Lao, admin-overridable per label
+
+## Translations (English / Lao)
+
+Every label in the frontend is a `t('some.key')` lookup against the bundled default
+catalogs in `frontend/src/locales/{en,lo}.json`. Those defaults are the fallback and
+also the full registry of valid keys.
+
+An admin can override any individual key/locale pair from **Admin → Translations**
+(`/admin/translations`) without touching code or redeploying:
+
+- `GET /api/translations` — public (even the login page needs labels before any
+  session exists); returns all saved overrides as `{ locale: { key: value } }`.
+- `GET/PUT/DELETE /api/admin/translations` — admin-only CRUD on individual overrides,
+  stored in the `translation_overrides` table (`key`, `locale`, `value`). Deleting a
+  row reverts that key/locale back to the bundled default.
+
+On boot, the frontend fetches the saved overrides and merges them on top of the
+default catalogs; saving/resetting in the admin UI also applies live without a reload.
+A language switcher (EN / ລາວ) sits in the top nav, persisted in `localStorage`.
 
 ## Running it
 
