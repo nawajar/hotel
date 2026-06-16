@@ -54,7 +54,6 @@ function formatDate(iso: string) {
           <label class="block text-xs font-medium text-gray-700 mb-1">{{ t("adminUsers.email") }}</label>
           <InputText
             v-model="form.email"
-            type="email"
             required
             class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
           />

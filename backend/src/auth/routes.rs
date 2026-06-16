@@ -15,7 +15,7 @@ use crate::{
 
 #[derive(Debug, Deserialize, Validate)]
 pub struct LoginInput {
-    #[validate(email)]
+    #[validate(length(min = 1, max = 255))]
     pub email: String,
     #[validate(length(min = 1))]
     pub password: String,

@@ -18,7 +18,7 @@ async fn list_users(
 
 #[derive(Debug, Deserialize, Validate)]
 struct CreateUserInput {
-    #[validate(email)]
+    #[validate(length(min = 1, max = 255))]
     email: String,
     #[validate(length(min = 1, max = 200))]
     name: String,
