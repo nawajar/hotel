@@ -13,6 +13,8 @@ pub enum AppError {
     Forbidden,
     #[error("validation error: {0}")]
     Validation(String),
+    #[error("{0}")]
+    Conflict(String),
     #[error("internal error")]
     Internal(#[from] anyhow::Error),
 }
@@ -30,6 +32,7 @@ impl IntoResponse for AppError {
             AppError::Unauthorized => (StatusCode::UNAUTHORIZED, self.to_string()),
             AppError::Forbidden => (StatusCode::FORBIDDEN, self.to_string()),
             AppError::Validation(msg) => (StatusCode::BAD_REQUEST, msg.clone()),
+            AppError::Conflict(msg) => (StatusCode::CONFLICT, msg.clone()),
             AppError::Internal(err) => {
                 tracing::error!(error = %err, "internal error");
                 (

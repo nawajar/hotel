@@ -47,6 +47,14 @@ async function handleLogout() {
           >
             {{ t("nav.translations") }}
           </router-link>
+          <router-link
+            v-if="authStore.isAdmin"
+            to="/admin/users"
+            class="text-sm text-gray-600 hover:text-gray-900"
+            active-class="text-gray-900 font-medium"
+          >
+            {{ t("nav.users") }}
+          </router-link>
         </div>
         <div class="flex items-center gap-4">
           <select

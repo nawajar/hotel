@@ -4,6 +4,7 @@
     "dashboard": "Dashboard",
     "admin": "Admin",
     "translations": "Translations",
+    "users": "Users",
     "logout": "Logout"
   },
   "login": {
@@ -39,5 +40,19 @@
   "demo": {
     "title": "Demo",
     "description": "This is a demo page to show how translations work. The text on this page can be overridden in the admin panel."
+  },
+  "adminUsers": {
+    "title": "Users",
+    "description": "Manage staff accounts. Add employees or admins.",
+    "email": "Email",
+    "name": "Name",
+    "password": "Password",
+    "role": "Role",
+    "roleAdmin": "Admin",
+    "roleEmployee": "Employee",
+    "createdAt": "Created",
+    "add": "Add user",
+    "added": "User added.",
+    "genericError": "Something went wrong. Please try again."
   }
 }

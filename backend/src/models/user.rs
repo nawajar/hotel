@@ -1,5 +1,6 @@
 use serde::Serialize;
 use sqlx::PgPool;
+use time::OffsetDateTime;
 use uuid::Uuid;
 
 #[derive(Debug, Clone, sqlx::FromRow)]
@@ -30,6 +31,17 @@ impl From<User> for UserPublic {
     }
 }
 
+/// A user row for admin listing/creation responses — omits password_hash.
+#[derive(Debug, Clone, Serialize, sqlx::FromRow)]
+pub struct UserListRow {
+    pub id: Uuid,
+    pub email: String,
+    pub name: String,
+    pub role: String,
+    #[serde(with = "time::serde::rfc3339")]
+    pub created_at: OffsetDateTime,
+}
+
 impl User {
     pub fn is_admin(&self) -> bool {
         self.role == "admin"
@@ -54,6 +66,37 @@ impl User {
             id
         )
         .fetch_optional(pool)
+        .await
+    }
+
+    pub async fn list_all(pool: &PgPool) -> Result<Vec<UserListRow>, sqlx::Error> {
+        sqlx::query_as!(
+            UserListRow,
+            r#"select id, email::text as "email!", name, role, created_at
+               from users order by created_at desc"#
+        )
+        .fetch_all(pool)
+        .await
+    }
+
+    pub async fn create(
+        pool: &PgPool,
+        email: &str,
+        name: &str,
+        password_hash: &str,
+        role: &str,
+    ) -> Result<UserListRow, sqlx::Error> {
+        sqlx::query_as!(
+            UserListRow,
+            r#"insert into users (email, name, password_hash, role)
+               values ($1, $2, $3, $4)
+               returning id, email::text as "email!", name, role, created_at"#,
+            email,
+            name,
+            password_hash,
+            role
+        )
+        .fetch_one(pool)
         .await
     }
 }
