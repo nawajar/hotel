@@ -92,22 +92,75 @@ SQLX_OFFLINE=true cargo build --release
 
 Commit the `.sqlx/` directory whenever queries change.
 
+## Running the backend manually in production
+
+`docker compose up` is for local dev only. In production the backend runs as a plain
+binary on the host — no Docker involved for the backend. (`db` and `frontend` can be
+run however you like; this section only covers the Rust binary.)
+
+1. **Build the release binary** (on the host, or in CI — needs Rust installed, not Docker):
+
+   ```sh
+   cd backend
+   SQLX_OFFLINE=true cargo build --release --bin hotel-backend
+   ```
+
+   This uses the committed `.sqlx/` query cache, so no live database is needed at build
+   time. Regenerate that cache whenever a query changes — see "SQLx: dev vs. prod" below.
+
+2. **Copy the binary and migrations to the server**, e.g. `/opt/hotel-backend/`:
+
+   ```
+   /opt/hotel-backend/hotel-backend       # from target/release/hotel-backend
+   /opt/hotel-backend/migrations/         # from backend/migrations/
+   /opt/hotel-backend/.env                # see required vars below
+   ```
+
+3. **Apply migrations once per deploy** (needs `sqlx-cli`: `cargo install sqlx-cli`):
+
+   ```sh
+   cd /opt/hotel-backend
+   DATABASE_URL=postgres://... sqlx migrate run
+   ```
+
+4. **Run the binary**, with these environment variables set (see `.env.example`):
+   - `DATABASE_URL` — pointing at the production Postgres instance.
+   - `SESSION_SECRET` — a real random secret (`openssl rand -hex 64`), not the dev placeholder.
+   - `COOKIE_SECURE=true` — required once served over HTTPS, so the session cookie gets
+     the `Secure` attribute. Leave `false` only for plain-HTTP testing.
+
+   ```sh
+   ./hotel-backend
+   ```
+
+   For a long-running service rather than a foreground process, see the systemd unit
+   example at `backend/deploy/hotel-backend.service.example` (copy it to
+   `/etc/systemd/system/hotel-backend.service`, edit the paths/user, then
+   `systemctl enable --now hotel-backend`).
+
+- The seed binary (`./hotel-backend`'s sibling `seed`) is dev/bootstrap-only — it's how
+  the *first* admin gets created. Don't wire it into a production restart loop; run it
+  once by hand if you need to seed a fresh production database, the same way: build it
+  with the same `SQLX_OFFLINE` step (`--bin seed`), then run it once with the production
+  `DATABASE_URL`/`ADMIN_EMAIL`/`ADMIN_PASSWORD` set.
+- `frontend/Dockerfile` has a `prod` stage (`vite build` → nginx) if you want the frontend
+  containerized too; entirely independent of how the backend is run.
+
 ## Prod notes
 
-- `backend/Dockerfile` has a `runtime` stage (cargo-chef cached build → slim Debian image)
-  that isn't used by `docker compose up` (which builds the `dev` stage). Build it directly
-  with `docker build --target runtime ./backend`.
-- `frontend/Dockerfile` has a `prod` stage (`vite build` → nginx) for the same reason.
-- Session cookies are issued with `Secure=false` in dev (no TLS on localhost). Flip this to
-  `true` in `backend/src/main.rs` once the app is served over HTTPS.
+- `backend/Dockerfile` also has a `runtime` stage (cargo-chef cached build → slim Debian
+  image) if you'd rather containerize the backend after all — build it with
+  `docker build --target runtime ./backend`. Not used by `docker compose up` (dev only)
+  or by the manual-run path above.
 - `SESSION_SECRET` in `.env.example` is a placeholder — generate a real one
   (`openssl rand -hex 64`) for any non-local deployment.
 
 ## Project layout
 
 ```
-backend/    Axum app, SQLx migrations, seed binary, Dockerfile
-frontend/   Vue app, Dockerfile
-docker-compose.yml
+backend/           Axum app, SQLx migrations, seed binary, Dockerfile
+backend/deploy/     systemd unit example for the manual production run
+frontend/          Vue app, Dockerfile
+docker-compose.yml  dev-only orchestration
 .env.example
 ```

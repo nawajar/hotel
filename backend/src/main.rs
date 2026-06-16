@@ -19,7 +19,7 @@ async fn main() {
     let session_store = PostgresStore::new(pool.clone());
     let session_key = Key::derive_from(config.session_secret.as_bytes());
     let session_layer = SessionManagerLayer::new(session_store)
-        .with_secure(false)
+        .with_secure(config.cookie_secure)
         .with_same_site(SameSite::Lax)
         .with_expiry(Expiry::OnInactivity(time::Duration::days(7)))
         .with_signed(session_key);

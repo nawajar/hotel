@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "delete from translation_overrides where key = $1 and locale = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "e9f3ccc02922a7a9f62a9dc6dcef1617d970417ccea29bfc8a061931ed76e8ee"
+}

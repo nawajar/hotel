@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "insert into translation_overrides (key, locale, value, updated_at)\n               values ($1, $2, $3, now())\n               on conflict (key, locale) do update set value = $3, updated_at = now()",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "b36670ed3c7e438665cc84de7c0c722a682378334eff84093baa4f24daff1529"
+}

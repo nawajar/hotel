@@ -1,0 +1,15 @@
+[Unit]
+Description=Hotel backend (Axum)
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=hotel
+WorkingDirectory=/opt/hotel-backend
+EnvironmentFile=/opt/hotel-backend/.env
+ExecStart=/opt/hotel-backend/hotel-backend
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

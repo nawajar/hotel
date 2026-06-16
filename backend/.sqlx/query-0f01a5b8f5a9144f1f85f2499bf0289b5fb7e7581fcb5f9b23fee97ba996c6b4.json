@@ -1,0 +1,46 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select id, email::text as \"email!\", name, password_hash, role\n               from users where id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "email!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "password_hash",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "role",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      null,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "0f01a5b8f5a9144f1f85f2499bf0289b5fb7e7581fcb5f9b23fee97ba996c6b4"
+}
