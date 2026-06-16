@@ -1,0 +1,9 @@
+{
+  "rust-analyzer.linkedProjects": ["backend/Cargo.toml"],
+  "rust-analyzer.cargo.extraEnv": {
+    "SQLX_OFFLINE": "true"
+  },
+  "rust-analyzer.runnables.extraEnv": {
+    "SQLX_OFFLINE": "true"
+  }
+}
