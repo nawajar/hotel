@@ -35,5 +35,9 @@
     "reset": "Reset",
     "saved": "Saved",
     "default": "(default)"
+  },
+  "demo": {
+    "title": "Demo",
+    "description": "This is a demo page to show how translations work. The text on this page can be overridden in the admin panel."
   }
 }
