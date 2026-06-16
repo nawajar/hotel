@@ -7,6 +7,7 @@ import Password from "primevue/password";
 import Button from "primevue/button";
 import { useLoginMutation } from "@/composables/useAuthQueries";
 import { ApiError } from "@/api/client";
+import { passwordToggleIconPt } from "@/components/passwordToggleIconPt";
 
 const router = useRouter();
 const { t } = useI18n();
@@ -57,8 +58,9 @@ async function handleSubmit() {
           v-model="password"
           :feedback="false"
           toggle-mask
-          input-class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400"
+          input-class="w-full rounded-md border border-gray-300 px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400"
           class="w-full"
+          :pt="passwordToggleIconPt"
         />
       </div>
 

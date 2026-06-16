@@ -7,6 +7,7 @@ import Password from "primevue/password";
 import Button from "primevue/button";
 import { useUsersQuery, useCreateUserMutation } from "@/composables/useUsersQueries";
 import { ApiError } from "@/api/client";
+import { passwordToggleIconPt } from "@/components/passwordToggleIconPt";
 
 const { t } = useI18n();
 
@@ -72,8 +73,9 @@ function formatDate(iso: string) {
             v-model="form.password"
             :feedback="false"
             toggle-mask
-            input-class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            input-class="w-full rounded-md border border-gray-300 px-3 py-2 pr-10 text-sm"
             class="w-full"
+            :pt="passwordToggleIconPt"
           />
         </div>
         <div>
