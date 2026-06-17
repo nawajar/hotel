@@ -5,6 +5,7 @@
     "admin": "Admin",
     "translations": "Translations",
     "users": "Users",
+    "rooms": "Rooms",
     "logout": "Logout"
   },
   "login": {
@@ -40,6 +41,37 @@
   "demo": {
     "title": "Demo",
     "description": "This is a demo page to show how translations work. The text on this page can be overridden in the admin panel."
+  },
+  "adminRooms": {
+    "title": "Rooms",
+    "description": "Manage hotel rooms. Add, edit, disable or delete rooms.",
+    "addTitle": "Add Room",
+    "editTitle": "Edit Room",
+    "roomNumber": "Room Number",
+    "roomNumberPlaceholder": "e.g. 101",
+    "roomName": "Room Name",
+    "roomNamePlaceholder": "e.g. Deluxe Suite",
+    "roomDescription": "Description",
+    "roomDescriptionPlaceholder": "Describe amenities, view, bed type…",
+    "optional": "optional",
+    "price": "Price",
+    "cancel": "Cancel",
+    "status": "Status",
+    "isActive": "Active",
+    "active": "Active",
+    "inactive": "Inactive",
+    "updatedAt": "Updated",
+    "add": "Add room",
+    "edit": "Edit",
+    "save": "Save",
+    "enable": "Enable",
+    "disable": "Disable",
+    "delete": "Delete",
+    "confirmDelete": "Are you sure you want to delete this room?",
+    "added": "Room added.",
+    "saved": "Room saved.",
+    "genericError": "Something went wrong. Please try again.",
+    "emptyState": "No rooms have been added yet."
   },
   "adminUsers": {
     "title": "Users",
