@@ -1,5 +1,6 @@
 pub mod admin;
 pub mod auth;
+pub mod bookings;
 pub mod config;
 pub mod db;
 pub mod error;

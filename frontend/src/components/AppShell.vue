@@ -63,6 +63,21 @@ async function handleLogout() {
           >
             {{ t("nav.rooms") }}
           </router-link>
+          <router-link
+            to="/admin/bookings"
+            class="text-sm text-gray-600 hover:text-gray-900"
+            active-class="text-gray-900 font-medium"
+          >
+            {{ t("nav.bookings") }}
+          </router-link>
+          <router-link
+            v-if="authStore.isAdmin"
+            to="/admin/income-summary"
+            class="text-sm text-gray-600 hover:text-gray-900"
+            active-class="text-gray-900 font-medium"
+          >
+            {{ t("nav.incomeSummary") }}
+          </router-link>
         </div>
         <div class="flex items-center gap-4">
           <select

@@ -40,6 +40,18 @@ const router = createRouter({
       component: () => import("@/views/AdminRoomsView.vue"),
       meta: { requiresAuth: true, requiresAdmin: true },
     },
+    {
+      path: "/admin/bookings",
+      name: "admin-bookings",
+      component: () => import("@/views/AdminBookingsView.vue"),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: "/admin/income-summary",
+      name: "admin-income-summary",
+      component: () => import("@/views/AdminIncomeSummaryView.vue"),
+      meta: { requiresAuth: true, requiresAdmin: true },
+    },
   ],
 });
 

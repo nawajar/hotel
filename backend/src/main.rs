@@ -1,5 +1,5 @@
 use axum::Router;
-use hotel_backend::{admin, auth, config::Config, db, translations, AppState};
+use hotel_backend::{admin, auth, bookings, config::Config, db, translations, AppState};
 use tower_sessions::{cookie::Key, cookie::SameSite, Expiry, SessionManagerLayer};
 use tower_sessions_sqlx_store::PostgresStore;
 
@@ -29,6 +29,7 @@ async fn main() {
     let app = Router::new()
         .nest("/api/auth", auth::routes::router())
         .nest("/api/admin", admin::router())
+        .nest("/api/bookings", bookings::router())
         .nest("/api/translations", translations::router())
         .with_state(state)
         .layer(session_layer);
