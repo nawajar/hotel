@@ -7,6 +7,7 @@ import InputNumber from "primevue/inputnumber";
 import Textarea from "primevue/textarea";
 import Button from "primevue/button";
 import Dialog from "primevue/dialog";
+import { VueDatePicker } from "@vuepic/vue-datepicker";
 import { ApiError } from "@/api/client";
 import type { Booking, BookingDetail } from "@/api/bookings";
 import {
@@ -151,8 +152,8 @@ const errorMessage = ref("");
 type DiscountMode = "none" | "amount" | "percentage";
 
 const form = reactive({
-  check_in: "",
-  check_out: "",
+  check_in: null as string | null,
+  check_out: null as string | null,
   room_ids: [] as string[],
   label: "" as string,
   note: "" as string,
@@ -185,6 +186,16 @@ const availabilityCheckIn = computed(() =>
 const availabilityCheckOut = computed(() =>
   form.check_out ? `${form.check_out}T12:00:00Z` : "",
 );
+
+const todayForPicker = new Date();
+todayForPicker.setHours(0, 0, 0, 0);
+
+const minCheckOut = computed<Date | undefined>(() => {
+  if (!form.check_in) return undefined;
+  const d = new Date(form.check_in);
+  d.setDate(d.getDate() + 1);
+  return d;
+});
 const { data: roomAvailability, isLoading: availabilityLoading } = useRoomAvailabilityQuery(
   availabilityCheckIn,
   availabilityCheckOut,
@@ -192,8 +203,8 @@ const { data: roomAvailability, isLoading: availabilityLoading } = useRoomAvaila
 
 function openAddDialog() {
   editingBooking.value = null;
-  form.check_in = "";
-  form.check_out = "";
+  form.check_in = null;
+  form.check_out = null;
   form.room_ids = [];
   form.label = "";
   form.note = "";
@@ -246,6 +257,10 @@ function toggleRoom(roomId: string) {
 
 async function handleSubmit() {
   errorMessage.value = "";
+  if (!form.check_in || !form.check_out) {
+    errorMessage.value = t("adminBookings.checkIn") + " / " + t("adminBookings.checkOut") + " required";
+    return;
+  }
   try {
     const check_in = `${form.check_in}T14:00:00Z`;
     const check_out = `${form.check_out}T12:00:00Z`;
@@ -1007,11 +1022,18 @@ const isPending = computed(
               {{ t("adminBookings.checkIn") }}
               <span class="text-red-500 ml-0.5">*</span>
             </label>
-            <input
+            <VueDatePicker
               v-model="form.check_in"
-              type="date"
-              required
-              class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400"
+              model-type="yyyy-MM-dd"
+              format="dd MMM yyyy"
+              :enable-time-picker="false"
+              auto-apply
+              :clearable="false"
+              :min-date="editingBooking ? undefined : todayForPicker"
+              :max-date="form.check_out ? new Date(form.check_out) : undefined"
+              week-start="1"
+              :teleport="true"
+              input-class-name="dp-hotel-input"
             />
           </div>
           <div class="flex flex-col gap-1.5">
@@ -1019,11 +1041,17 @@ const isPending = computed(
               {{ t("adminBookings.checkOut") }}
               <span class="text-red-500 ml-0.5">*</span>
             </label>
-            <input
+            <VueDatePicker
               v-model="form.check_out"
-              type="date"
-              required
-              class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400"
+              model-type="yyyy-MM-dd"
+              format="dd MMM yyyy"
+              :enable-time-picker="false"
+              auto-apply
+              :clearable="false"
+              :min-date="minCheckOut ?? (editingBooking ? undefined : todayForPicker)"
+              week-start="1"
+              :teleport="true"
+              input-class-name="dp-hotel-input"
             />
           </div>
         </div>
@@ -1281,3 +1309,36 @@ const isPending = computed(
     </Dialog>
   </AppShell>
 </template>
+
+<style>
+/* Match the app's design system */
+:root {
+  --dp-primary-color: #111827;
+  --dp-primary-text-color: #ffffff;
+  --dp-border-radius: 0.375rem;
+  --dp-cell-border-radius: 0.25rem;
+  --dp-font-size: 0.875rem;
+  --dp-font-family: inherit;
+  --dp-border-color: #d1d5db;
+  --dp-hover-color: #f3f4f6;
+  --dp-hover-text-color: #111827;
+  --dp-menu-min-width: 260px;
+}
+
+.dp-hotel-input {
+  width: 100%;
+  border-radius: 0.375rem;
+  border: 1px solid #d1d5db;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  outline: none;
+  background: white;
+  color: #111827;
+}
+
+.dp-hotel-input:focus {
+  ring: 2px solid #9ca3af;
+  border-color: #9ca3af;
+}
+</style>

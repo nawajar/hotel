@@ -9,6 +9,7 @@ import { useAuthStore } from "./stores/auth";
 import { i18n, applyTranslationOverrides } from "./i18n";
 import { translationsApi } from "./api/translations";
 import "./assets/main.css";
+import "@vuepic/vue-datepicker/dist/main.css";
 
 const app = createApp(App);
 
