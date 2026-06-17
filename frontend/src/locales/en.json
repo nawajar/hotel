@@ -169,7 +169,14 @@
     "closeDetail": "Close",
     "prevPage": "Previous",
     "nextPage": "Next",
-    "pageOf": "{page} of {total}"
+    "pageOf": "{page} of {total}",
+    "documents": "Documents",
+    "uploadDocument": "Attach file",
+    "deleteDocument": "Remove",
+    "confirmDeleteDocument": "Remove this file?",
+    "uploadedBy": "by",
+    "docAllowedTypes": "JPG, PNG, PDF, WebP — max 10 MB",
+    "downloading": "Open"
   },
   "adminUsers": {
     "title": "Users",

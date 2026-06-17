@@ -16,6 +16,10 @@ async fn main() {
     let config = Config::from_env();
     let pool = db::connect(&config.database_url).await;
 
+    tokio::fs::create_dir_all(&config.uploads_dir)
+        .await
+        .expect("failed to create uploads directory");
+
     let session_store = PostgresStore::new(pool.clone());
     let session_key = Key::derive_from(config.session_secret.as_bytes());
     let session_layer = SessionManagerLayer::new(session_store)
@@ -24,7 +28,7 @@ async fn main() {
         .with_expiry(Expiry::OnInactivity(time::Duration::days(7)))
         .with_signed(session_key);
 
-    let state = AppState { pool };
+    let state = AppState { pool, uploads_dir: config.uploads_dir };
 
     let app = Router::new()
         .nest("/api/auth", auth::routes::router())

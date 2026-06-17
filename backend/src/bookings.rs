@@ -1,6 +1,8 @@
 use axum::{
-    extract::{Path, Query, State},
-    http::StatusCode,
+    body::Body,
+    extract::{Multipart, Path, Query, State},
+    http::{header, StatusCode},
+    response::Response,
     routing::{delete, get, post, put},
     Json, Router,
 };
@@ -13,8 +15,8 @@ use crate::{
     auth::extractor::{AuthUser, RequireAdmin},
     error::AppError,
     models::booking::{
-        Booking, BookingDetail, BookingExtraService, BookingRoom, IncomeSummaryRow,
-        RoomAvailability, TodaySummary,
+        Booking, BookingDetail, BookingDocument, BookingExtraService, BookingRoom,
+        IncomeSummaryRow, RoomAvailability, TodaySummary,
     },
     AppState,
 };
@@ -360,6 +362,127 @@ async fn today_summary(
     Ok(Json(Booking::today_summary(&state.pool).await?))
 }
 
+const MAX_UPLOAD_BYTES: usize = 10 * 1024 * 1024; // 10 MB
+const ALLOWED_EXTENSIONS: &[&str] = &["jpg", "jpeg", "png", "pdf", "webp", "gif"];
+
+async fn upload_document(
+    AuthUser(user): AuthUser,
+    State(state): State<AppState>,
+    Path(booking_id): Path<Uuid>,
+    mut multipart: Multipart,
+) -> Result<(StatusCode, Json<BookingDocument>), AppError> {
+    // Verify booking exists
+    Booking::find_by_id(&state.pool, booking_id)
+        .await?
+        .ok_or_else(|| AppError::NotFound("booking not found".into()))?;
+
+    let field = multipart
+        .next_field()
+        .await
+        .map_err(|e| AppError::Validation(e.to_string()))?
+        .ok_or_else(|| AppError::Validation("no file provided".into()))?;
+
+    let original_filename = field
+        .file_name()
+        .unwrap_or("document")
+        .to_string();
+    let mime_type = field
+        .content_type()
+        .unwrap_or("application/octet-stream")
+        .to_string();
+    let data = field
+        .bytes()
+        .await
+        .map_err(|e| AppError::Validation(e.to_string()))?;
+
+    if data.is_empty() {
+        return Err(AppError::Validation("file is empty".into()));
+    }
+    if data.len() > MAX_UPLOAD_BYTES {
+        return Err(AppError::Validation("file too large (max 10 MB)".into()));
+    }
+
+    let ext = std::path::Path::new(&original_filename)
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("bin")
+        .to_lowercase();
+
+    if !ALLOWED_EXTENSIONS.contains(&ext.as_str()) {
+        return Err(AppError::Validation(
+            "only JPG, PNG, PDF, WebP, GIF files are allowed".into(),
+        ));
+    }
+
+    let stored_name = format!("{}.{}", Uuid::new_v4(), ext);
+    let dir = state.uploads_dir.join(booking_id.to_string());
+    tokio::fs::create_dir_all(&dir).await?;
+    tokio::fs::write(dir.join(&stored_name), &data).await?;
+
+    let doc = BookingDocument::create(
+        &state.pool,
+        booking_id,
+        &original_filename,
+        &stored_name,
+        &mime_type,
+        data.len() as i64,
+        user.id,
+    )
+    .await?;
+
+    Ok((StatusCode::CREATED, Json(doc)))
+}
+
+async fn download_document(
+    AuthUser(_user): AuthUser,
+    State(state): State<AppState>,
+    Path((booking_id, doc_id)): Path<(Uuid, Uuid)>,
+) -> Result<Response<Body>, AppError> {
+    let doc = BookingDocument::find_by_id(&state.pool, doc_id)
+        .await?
+        .filter(|d| d.booking_id == booking_id)
+        .ok_or_else(|| AppError::NotFound("document not found".into()))?;
+
+    let path = state
+        .uploads_dir
+        .join(booking_id.to_string())
+        .join(&doc.stored_name);
+
+    let bytes = tokio::fs::read(&path)
+        .await
+        .map_err(|_| AppError::NotFound("file not found on disk".into()))?;
+
+    let disposition = format!("inline; filename=\"{}\"", doc.filename);
+
+    Ok(Response::builder()
+        .status(StatusCode::OK)
+        .header(header::CONTENT_TYPE, &doc.mime_type)
+        .header(header::CONTENT_DISPOSITION, disposition)
+        .header(header::CONTENT_LENGTH, bytes.len())
+        .body(Body::from(bytes))
+        .unwrap())
+}
+
+async fn delete_document(
+    AuthUser(_user): AuthUser,
+    State(state): State<AppState>,
+    Path((booking_id, doc_id)): Path<(Uuid, Uuid)>,
+) -> Result<StatusCode, AppError> {
+    let doc = BookingDocument::delete(&state.pool, doc_id)
+        .await?
+        .filter(|d| d.booking_id == booking_id)
+        .ok_or_else(|| AppError::NotFound("document not found".into()))?;
+
+    // Best-effort file removal — don't fail if file is already gone
+    let path = state
+        .uploads_dir
+        .join(booking_id.to_string())
+        .join(&doc.stored_name);
+    let _ = tokio::fs::remove_file(&path).await;
+
+    Ok(StatusCode::NO_CONTENT)
+}
+
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/income-summary", get(income_summary))
@@ -371,4 +494,6 @@ pub fn router() -> Router<AppState> {
         .route("/{id}/rooms/{room_id}/cancel", put(cancel_room))
         .route("/{id}/extra-services", post(add_extra_service))
         .route("/{id}/extra-services/{sid}", delete(remove_extra_service))
+        .route("/{id}/documents", post(upload_document))
+        .route("/{id}/documents/{doc_id}", get(download_document).delete(delete_document))
 }

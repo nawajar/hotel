@@ -7,9 +7,11 @@ pub mod error;
 pub mod models;
 pub mod translations;
 
+use std::path::PathBuf;
 use sqlx::PgPool;
 
 #[derive(Clone)]
 pub struct AppState {
     pub pool: PgPool,
+    pub uploads_dir: PathBuf,
 }

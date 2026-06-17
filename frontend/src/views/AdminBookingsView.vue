@@ -18,9 +18,12 @@ import {
   useCancelBookingRoomMutation,
   useAddExtraServiceMutation,
   useRemoveExtraServiceMutation,
+  useUploadDocumentMutation,
+  useDeleteDocumentMutation,
   useTodaySummaryQuery,
   useRoomAvailabilityQuery,
 } from "@/composables/useBookingsQueries";
+import { bookingsApi } from "@/api/bookings";
 
 const { t } = useI18n();
 
@@ -92,8 +95,53 @@ const cancelBookingMutation = useCancelBookingMutation(selectedBookingId);
 const cancelRoomMutation = useCancelBookingRoomMutation();
 const addExtraServiceMutation = useAddExtraServiceMutation();
 const removeExtraServiceMutation = useRemoveExtraServiceMutation();
+const uploadDocumentMutation = useUploadDocumentMutation();
+const deleteDocumentMutation = useDeleteDocumentMutation();
 const createBookingMutation = useCreateBookingMutation();
 const updateBookingMutation = useUpdateBookingMutation();
+
+const uploadError = ref("");
+const isUploading = ref(false);
+
+async function handleFileUpload(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
+  input.value = "";
+  uploadError.value = "";
+  isUploading.value = true;
+  try {
+    await uploadDocumentMutation.mutateAsync({
+      bookingId: selectedBookingId.value,
+      file,
+    });
+  } catch (err) {
+    uploadError.value =
+      err instanceof ApiError ? err.message : t("adminBookings.genericError");
+  } finally {
+    isUploading.value = false;
+  }
+}
+
+async function handleDeleteDocument(docId: string) {
+  if (!window.confirm(t("adminBookings.confirmDeleteDocument"))) return;
+  uploadError.value = "";
+  try {
+    await deleteDocumentMutation.mutateAsync({
+      bookingId: selectedBookingId.value,
+      docId,
+    });
+  } catch (err) {
+    uploadError.value =
+      err instanceof ApiError ? err.message : t("adminBookings.genericError");
+  }
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 // --- Form dialog ---
 const formDialogVisible = ref(false);
@@ -857,6 +905,64 @@ const isPending = computed(
           <p v-if="extraServiceError" class="mt-1 text-xs text-red-600">
             {{ extraServiceError }}
           </p>
+        </div>
+
+        <!-- Documents -->
+        <div>
+          <h3 class="text-sm font-medium text-gray-700 mb-2">
+            {{ t("adminBookings.documents") }}
+          </h3>
+
+          <div v-if="bookingDetail.documents.length > 0" class="flex flex-col gap-1.5 mb-3">
+            <div
+              v-for="doc in bookingDetail.documents"
+              :key="doc.id"
+              class="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 px-3 py-2"
+            >
+              <span class="text-lg leading-none">
+                {{ doc.mime_type === "application/pdf" ? "📄" : "🖼️" }}
+              </span>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm text-gray-900 truncate">{{ doc.filename }}</p>
+                <p class="text-xs text-gray-400">
+                  {{ formatFileSize(doc.size) }} · {{ t("adminBookings.uploadedBy") }}
+                  {{ doc.uploaded_by_name }}
+                </p>
+              </div>
+              <a
+                :href="bookingsApi.documentDownloadUrl(bookingDetail!.booking.id, doc.id)"
+                target="_blank"
+                rel="noopener"
+                class="text-xs text-blue-600 hover:text-blue-800 shrink-0"
+              >{{ t("adminBookings.downloading") }}</a>
+              <button
+                class="text-xs text-red-500 hover:text-red-700 shrink-0"
+                @click="handleDeleteDocument(doc.id)"
+              >{{ t("adminBookings.deleteDocument") }}</button>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <label
+              :class="[
+                'inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium cursor-pointer transition-colors',
+                isUploading
+                  ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed'
+                  : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50',
+              ]"
+            >
+              <span>{{ isUploading ? "…" : t("adminBookings.uploadDocument") }}</span>
+              <input
+                type="file"
+                class="sr-only"
+                accept=".jpg,.jpeg,.png,.pdf,.webp,.gif"
+                :disabled="isUploading"
+                @change="handleFileUpload"
+              />
+            </label>
+            <span class="text-xs text-gray-400">{{ t("adminBookings.docAllowedTypes") }}</span>
+          </div>
+          <p v-if="uploadError" class="mt-1 text-xs text-red-600">{{ uploadError }}</p>
         </div>
 
         <!-- Total -->

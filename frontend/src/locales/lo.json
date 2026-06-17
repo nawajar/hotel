@@ -169,7 +169,14 @@
     "closeDetail": "ປິດ",
     "prevPage": "ກ່ອນໜ້າ",
     "nextPage": "ຕໍ່ໄປ",
-    "pageOf": "{page} ຈາກ {total}"
+    "pageOf": "{page} ຈາກ {total}",
+    "documents": "ເອກະສານ",
+    "uploadDocument": "ແນບໄຟລ໌",
+    "deleteDocument": "ລຶບ",
+    "confirmDeleteDocument": "ລຶບໄຟລ໌ນີ້ບໍ?",
+    "uploadedBy": "ໂດຍ",
+    "docAllowedTypes": "JPG, PNG, PDF, WebP — ສູງສຸດ 10 MB",
+    "downloading": "ເປີດ"
   },
   "adminUsers": {
     "title": "ຜູ້ໃຊ້",

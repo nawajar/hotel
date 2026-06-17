@@ -21,6 +21,13 @@ pub enum AppError {
     Internal(#[from] anyhow::Error),
 }
 
+impl From<std::io::Error> for AppError {
+    fn from(err: std::io::Error) -> Self {
+        tracing::error!(error = %err, "io error");
+        AppError::Internal(anyhow::anyhow!("io error"))
+    }
+}
+
 impl From<sqlx::Error> for AppError {
     fn from(err: sqlx::Error) -> Self {
         tracing::error!(error = %err, "database error");

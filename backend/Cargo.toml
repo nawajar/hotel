@@ -17,7 +17,7 @@ name = "seed"
 path = "src/bin/seed.rs"
 
 [dependencies]
-axum = "0.8"
+axum = { version = "0.8", features = ["multipart"] }
 tokio = { version = "1", features = ["full"] }
 tower = "0.4"
 tower-sessions = { version = "0.14", default-features = false, features = ["axum-core", "signed"] }

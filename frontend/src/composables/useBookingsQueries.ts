@@ -7,6 +7,28 @@ import {
   type AddExtraServiceInput,
 } from "@/api/bookings";
 
+export function useUploadDocumentMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ bookingId, file }: { bookingId: string; file: File }) =>
+      bookingsApi.uploadDocument(bookingId, file),
+    onSuccess: (_data, { bookingId }) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-booking", bookingId] });
+    },
+  });
+}
+
+export function useDeleteDocumentMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ bookingId, docId }: { bookingId: string; docId: string }) =>
+      bookingsApi.deleteDocument(bookingId, docId),
+    onSuccess: (_data, { bookingId }) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-booking", bookingId] });
+    },
+  });
+}
+
 export function useTodaySummaryQuery() {
   return useQuery({
     queryKey: ["today-summary"],

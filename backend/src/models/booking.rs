@@ -78,11 +78,27 @@ pub struct Booking {
     pub updated_by_name: String,
 }
 
+#[derive(Debug, Clone, Serialize, sqlx::FromRow)]
+pub struct BookingDocument {
+    pub id: Uuid,
+    pub booking_id: Uuid,
+    pub filename: String,
+    #[serde(skip)]
+    pub stored_name: String,
+    pub mime_type: String,
+    pub size: i64,
+    pub uploaded_by: Uuid,
+    pub uploaded_by_name: String,
+    #[serde(with = "time::serde::rfc3339")]
+    pub created_at: OffsetDateTime,
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct BookingDetail {
     pub booking: Booking,
     pub rooms: Vec<BookingRoom>,
     pub extra_services: Vec<BookingExtraService>,
+    pub documents: Vec<BookingDocument>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -161,7 +177,9 @@ impl Booking {
         .fetch_all(pool)
         .await?;
 
-        Ok(Some(BookingDetail { booking, rooms, extra_services }))
+        let documents = BookingDocument::list_for_booking(pool, id).await?;
+
+        Ok(Some(BookingDetail { booking, rooms, extra_services, documents }))
     }
 
     pub async fn count_existing_rooms(
@@ -660,5 +678,77 @@ impl Booking {
             needs_attention,
             unpaid_active,
         })
+    }
+}
+
+impl BookingDocument {
+    pub async fn list_for_booking(
+        pool: &PgPool,
+        booking_id: Uuid,
+    ) -> Result<Vec<BookingDocument>, sqlx::Error> {
+        sqlx::query_as!(
+            BookingDocument,
+            r#"select d.id, d.booking_id, d.filename, d.stored_name, d.mime_type, d.size,
+                      d.uploaded_by, coalesce(u.name, '') as "uploaded_by_name!",
+                      d.created_at
+               from booking_documents d
+               left join users u on u.id = d.uploaded_by
+               where d.booking_id = $1
+               order by d.created_at asc"#,
+            booking_id
+        )
+        .fetch_all(pool)
+        .await
+    }
+
+    pub async fn find_by_id(pool: &PgPool, id: Uuid) -> Result<Option<BookingDocument>, sqlx::Error> {
+        sqlx::query_as!(
+            BookingDocument,
+            r#"select d.id, d.booking_id, d.filename, d.stored_name, d.mime_type, d.size,
+                      d.uploaded_by, coalesce(u.name, '') as "uploaded_by_name!",
+                      d.created_at
+               from booking_documents d
+               left join users u on u.id = d.uploaded_by
+               where d.id = $1"#,
+            id
+        )
+        .fetch_optional(pool)
+        .await
+    }
+
+    pub async fn create(
+        pool: &PgPool,
+        booking_id: Uuid,
+        filename: &str,
+        stored_name: &str,
+        mime_type: &str,
+        size: i64,
+        uploaded_by: Uuid,
+    ) -> Result<BookingDocument, sqlx::Error> {
+        let id = sqlx::query_scalar!(
+            r#"insert into booking_documents (booking_id, filename, stored_name, mime_type, size, uploaded_by)
+               values ($1, $2, $3, $4, $5, $6)
+               returning id"#,
+            booking_id,
+            filename,
+            stored_name,
+            mime_type,
+            size,
+            uploaded_by
+        )
+        .fetch_one(pool)
+        .await?;
+
+        Self::find_by_id(pool, id).await?.ok_or(sqlx::Error::RowNotFound)
+    }
+
+    pub async fn delete(pool: &PgPool, id: Uuid) -> Result<Option<BookingDocument>, sqlx::Error> {
+        let doc = Self::find_by_id(pool, id).await?;
+        if doc.is_some() {
+            sqlx::query!("delete from booking_documents where id = $1", id)
+                .execute(pool)
+                .await?;
+        }
+        Ok(doc)
     }
 }

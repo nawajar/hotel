@@ -44,10 +44,22 @@ export interface Booking {
   updated_by_name: string;
 }
 
+export interface BookingDocument {
+  id: string;
+  booking_id: string;
+  filename: string;
+  mime_type: string;
+  size: number;
+  uploaded_by: string;
+  uploaded_by_name: string;
+  created_at: string;
+}
+
 export interface BookingDetail {
   booking: Booking;
   rooms: BookingRoom[];
   extra_services: BookingExtraService[];
+  documents: BookingDocument[];
 }
 
 export interface RoomAvailability {
@@ -135,4 +147,27 @@ export const bookingsApi = {
     return apiClient.get<RoomAvailability[]>(`/bookings/room-availability?${params}`);
   },
   getTodaySummary: () => apiClient.get<TodaySummary>("/bookings/today-summary"),
+  uploadDocument: async (bookingId: string, file: File): Promise<BookingDocument> => {
+    const form = new FormData();
+    form.append("file", file);
+    const res = await fetch(`/api/bookings/${bookingId}/documents`, {
+      method: "POST",
+      credentials: "include",
+      body: form,
+    });
+    if (!res.ok) {
+      let message = res.statusText;
+      try {
+        const body = await res.json();
+        if (body?.error) message = body.error;
+      } catch { /* empty */ }
+      const { ApiError } = await import("./client");
+      throw new ApiError(res.status, message);
+    }
+    return res.json();
+  },
+  deleteDocument: (bookingId: string, docId: string) =>
+    apiClient.del<void>(`/bookings/${bookingId}/documents/${docId}`),
+  documentDownloadUrl: (bookingId: string, docId: string) =>
+    `/api/bookings/${bookingId}/documents/${docId}`,
 };
