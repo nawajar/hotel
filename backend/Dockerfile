@@ -25,11 +25,16 @@ RUN cargo install cargo-watch --locked \
 EXPOSE 3000
 CMD ["sh", "-c", "sqlx migrate run && cargo watch -x run"]
 
-# ---- runtime stage: minimal prod image (not used by docker-compose) ----
+# ---- sqlx-cli binary (separate stage so it doesn't slow down the app builder) ----
+FROM chef AS sqlx-installer
+RUN cargo install sqlx-cli --locked --no-default-features --features postgres,rustls
+
+# ---- runtime stage: minimal prod image ----
 FROM debian:bookworm-slim AS runtime
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates libssl3 && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY --from=builder /app/target/release/hotel-backend /usr/local/bin/hotel-backend
+COPY --from=sqlx-installer /usr/local/cargo/bin/sqlx /usr/local/bin/sqlx
 COPY --from=builder /app/migrations ./migrations
 EXPOSE 3000
-CMD ["hotel-backend"]
+CMD ["sh", "-c", "sqlx migrate run && exec hotel-backend"]
