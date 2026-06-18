@@ -7,6 +7,7 @@
     "users": "Users",
     "rooms": "Rooms",
     "bookings": "Bookings",
+    "calendar": "Calendar",
     "incomeSummary": "Income Summary",
     "logout": "Logout"
   },
@@ -177,6 +178,31 @@
     "uploadedBy": "by",
     "docAllowedTypes": "JPG, PNG, PDF, WebP — max 10 MB",
     "downloading": "Open"
+  },
+  "calendar": {
+    "title": "Calendar",
+    "rooms": "Rooms",
+    "timeline": "Timeline",
+    "month": "Month",
+    "today": "Today",
+    "edit": "Edit",
+    "close": "Close",
+    "bookingRef": "Booking Ref",
+    "customer": "Customer",
+    "checkIn": "Check-in",
+    "checkOut": "Check-out",
+    "status": "Status",
+    "paymentStatus": "Payment",
+    "label": "Label",
+    "note": "Note",
+    "legend": {
+      "needsAttention": "Needs Attention",
+      "checkIn": "Check-in",
+      "checkOut": "Check-out",
+      "paid": "Paid",
+      "unpaid": "Unpaid",
+      "cancelled": "Cancelled"
+    }
   },
   "adminUsers": {
     "title": "Users",

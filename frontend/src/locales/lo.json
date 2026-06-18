@@ -7,6 +7,7 @@
     "users": "ຜູ້ໃຊ້",
     "rooms": "ຫ້ອງພັກ",
     "bookings": "ການຈອງ",
+    "calendar": "ປະຕິທິນ",
     "incomeSummary": "ສະຫຼຸບລາຍຮັບ",
     "logout": "ອອກຈາກລະບົບ"
   },
@@ -177,6 +178,31 @@
     "uploadedBy": "ໂດຍ",
     "docAllowedTypes": "JPG, PNG, PDF, WebP — ສູງສຸດ 10 MB",
     "downloading": "ເປີດ"
+  },
+  "calendar": {
+    "title": "ປະຕິທິນ",
+    "rooms": "ຫ້ອງພັກ",
+    "timeline": "ໄທມ໌ລາຍ",
+    "month": "ເດືອນ",
+    "today": "ວັນນີ້",
+    "edit": "ແກ້ໄຂ",
+    "close": "ປິດ",
+    "bookingRef": "ລະຫັດການຈອງ",
+    "customer": "ລູກຄ້າ",
+    "checkIn": "ວັນເຂົ້າ",
+    "checkOut": "ວັນອອກ",
+    "status": "ສະຖານະ",
+    "paymentStatus": "ການຊຳລະ",
+    "label": "ປ້າຍ",
+    "note": "ໝາຍເຫດ",
+    "legend": {
+      "needsAttention": "ຕ້ອງການຄວາມເອົາໃຈໃສ່",
+      "checkIn": "ເຊັກອິນ",
+      "checkOut": "ເຊັກເອົາທ໌",
+      "paid": "ຊຳລະແລ້ວ",
+      "unpaid": "ຍັງບໍ່ຊຳລະ",
+      "cancelled": "ຍົກເລີກ"
+    }
   },
   "adminUsers": {
     "title": "ຜູ້ໃຊ້",

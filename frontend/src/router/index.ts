@@ -52,6 +52,12 @@ const router = createRouter({
       component: () => import("@/views/AdminIncomeSummaryView.vue"),
       meta: { requiresAuth: true, requiresAdmin: true },
     },
+    {
+      path: "/calendar",
+      name: "calendar",
+      component: () => import("@/views/CalendarView.vue"),
+      meta: { requiresAuth: true },
+    },
   ],
 });
 

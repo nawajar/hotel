@@ -3,7 +3,28 @@ use sqlx::PgPool;
 use time::OffsetDateTime;
 use uuid::Uuid;
 
-use crate::models::room::Room;
+#[derive(Debug, Clone, Serialize)]
+pub struct CalendarBookingRoom {
+    pub id: Uuid,
+    pub room_number: String,
+    pub room_name: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct CalendarBooking {
+    pub id: Uuid,
+    pub booking_ref: String,
+    pub status: String,
+    pub payment_status: String,
+    pub label: Option<String>,
+    #[serde(with = "time::serde::rfc3339")]
+    pub check_in: OffsetDateTime,
+    #[serde(with = "time::serde::rfc3339")]
+    pub check_out: OffsetDateTime,
+    pub customer_name: Option<String>,
+    pub note: Option<String>,
+    pub rooms: Vec<CalendarBookingRoom>,
+}
 
 #[derive(Debug, Clone, Serialize)]
 pub struct RoomAvailability {
@@ -112,6 +133,60 @@ pub struct IncomeSummaryRow {
 }
 
 impl Booking {
+    pub async fn calendar_list(
+        pool: &PgPool,
+        start: OffsetDateTime,
+        end: OffsetDateTime,
+    ) -> Result<Vec<CalendarBooking>, sqlx::Error> {
+        let rows = sqlx::query!(
+            r#"select b.id, b.booking_ref, b.status, b.payment_status, b.label,
+                      b.check_in, b.check_out, b.customer_name, b.note,
+                      br.room_id as "room_id?", br.room_number as "room_number?", br.room_name as "room_name?"
+               from bookings b
+               left join booking_rooms br on br.booking_id = b.id and br.status = 'active'
+               where b.status = 'active' and b.check_in <= $2 and b.check_out >= $1
+               order by b.check_in asc, b.id asc, br.room_number asc"#,
+            start,
+            end,
+        )
+        .fetch_all(pool)
+        .await?;
+
+        let mut result: Vec<CalendarBooking> = Vec::new();
+        let mut last_id: Option<Uuid> = None;
+
+        for row in rows {
+            if last_id != Some(row.id) {
+                result.push(CalendarBooking {
+                    id: row.id,
+                    booking_ref: row.booking_ref,
+                    status: row.status,
+                    payment_status: row.payment_status,
+                    label: row.label,
+                    check_in: row.check_in,
+                    check_out: row.check_out,
+                    customer_name: row.customer_name,
+                    note: row.note,
+                    rooms: Vec::new(),
+                });
+                last_id = Some(row.id);
+            }
+            if let (Some(room_id), Some(room_number), Some(room_name)) =
+                (row.room_id, row.room_number, row.room_name)
+            {
+                if let Some(booking) = result.last_mut() {
+                    booking.rooms.push(CalendarBookingRoom {
+                        id: room_id,
+                        room_number,
+                        room_name,
+                    });
+                }
+            }
+        }
+
+        Ok(result)
+    }
+
     pub async fn list_all(pool: &PgPool) -> Result<Vec<Booking>, sqlx::Error> {
         sqlx::query_as!(
             Booking,
@@ -279,9 +354,8 @@ impl Booking {
         .await?;
 
         for room_id in room_ids {
-            let room = sqlx::query_as!(
-                Room,
-                "select id, room_number, room_name, room_description, is_active, price, updated_at, updated_by from rooms where id = $1",
+            let room = sqlx::query!(
+                "select id, room_number, room_name, price from rooms where id = $1",
                 room_id
             )
             .fetch_optional(&mut *tx)

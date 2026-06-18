@@ -12,6 +12,12 @@
     "i18n:fix": "node scripts/check-i18n-keys.mjs --fix"
   },
   "dependencies": {
+    "@fullcalendar/core": "^6.1.21",
+    "@fullcalendar/daygrid": "^6.1.21",
+    "@fullcalendar/interaction": "^6.1.21",
+    "@fullcalendar/resource": "^6.1.21",
+    "@fullcalendar/resource-timeline": "^6.1.21",
+    "@fullcalendar/vue3": "^6.1.21",
     "@tanstack/vue-query": "^5.59.0",
     "@vuepic/vue-datepicker": "^14.0.0",
     "pinia": "^2.2.4",
