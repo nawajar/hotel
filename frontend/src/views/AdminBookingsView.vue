@@ -584,19 +584,27 @@ const isPending = computed(
             <td class="py-2 pr-4 text-gray-600">{{ formatDate(booking.check_in) }}</td>
             <td class="py-2 pr-4 text-gray-600">{{ formatDate(booking.check_out) }}</td>
             <td class="py-2 pr-4 text-gray-500 text-xs">{{ booking.customer_name ?? "—" }}</td>
-            <td class="py-2 flex items-center gap-2">
+            <td class="py-2 flex items-center gap-1">
               <button
-                class="text-xs text-blue-600 hover:text-blue-800"
+                class="p-1.5 rounded text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                :title="t('adminBookings.view')"
                 @click="openDetail(booking.id)"
               >
-                {{ t("adminBookings.view") }}
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
               </button>
               <button
                 v-if="booking.status === 'active'"
-                class="text-xs text-gray-600 hover:text-gray-900"
+                class="p-1.5 rounded text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+                :title="t('adminBookings.edit')"
                 @click="openEditDialog(booking)"
               >
-                {{ t("adminBookings.edit") }}
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
               </button>
             </td>
           </tr>
