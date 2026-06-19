@@ -34,7 +34,10 @@ const paymentFilter = ref<"" | "paid" | "unpaid">("");
 const PAGE_SIZE = 15;
 const currentPage = ref(1);
 
-const todayDate = new Date().toISOString().slice(0, 10);
+const todayDate = computed(() => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+});
 
 const filteredBookings = computed(() => {
   if (!bookings.value) return [];
@@ -44,10 +47,10 @@ const filteredBookings = computed(() => {
     list = list.filter((b) => {
       const ci = b.check_in.slice(0, 10);
       const co = b.check_out.slice(0, 10);
-      return ci <= todayDate && co >= todayDate;
+      return ci <= todayDate.value && co >= todayDate.value;
     });
   } else if (activeTab.value === "upcoming") {
-    list = list.filter((b) => b.check_in.slice(0, 10) > todayDate);
+    list = list.filter((b) => b.check_in.slice(0, 10) > todayDate.value);
   }
 
   if (statusFilter.value) {
@@ -199,9 +202,8 @@ todayForPicker.setHours(0, 0, 0, 0);
 
 const minCheckOut = computed<Date | undefined>(() => {
   if (!form.check_in) return undefined;
-  const d = new Date(form.check_in);
-  d.setDate(d.getDate() + 1);
-  return d;
+  const [y, m, day] = form.check_in.split("-").map(Number);
+  return new Date(y, m - 1, day + 1);
 });
 
 
@@ -434,9 +436,9 @@ const statPanelBookings = computed(() => {
     const ci = b.check_in.slice(0, 10);
     const co = b.check_out.slice(0, 10);
     switch (statPanel.value.type) {
-      case "occupied": return ci <= todayDate && co > todayDate;
-      case "check_ins": return ci === todayDate;
-      case "check_outs": return co === todayDate;
+      case "occupied": return ci <= todayDate.value && co > todayDate.value;
+      case "check_ins": return ci === todayDate.value;
+      case "check_outs": return co === todayDate.value;
       case "needs_attention": return b.label === "needs_attention";
     }
   });
@@ -632,111 +634,104 @@ function openDetailFromPanel(id: string) {
     <!-- Booking Detail Dialog -->
     <dialog ref="detailDialogEl" class="modal" @close="detailDialogVisible = false">
       <div class="modal-box w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div class="flex items-center justify-between mb-4">
-          <span class="font-mono font-semibold">{{ bookingDetail?.booking.booking_ref ?? "…" }}</span>
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-5">
+          <div>
+            <p class="text-xs text-base-content/40 mb-0.5">{{ t("adminBookings.bookingRef") }}</p>
+            <span class="font-mono font-bold text-lg">{{ bookingDetail?.booking.booking_ref ?? "…" }}</span>
+          </div>
           <form method="dialog">
             <button class="btn btn-sm btn-circle btn-ghost">✕</button>
           </form>
         </div>
 
         <div v-if="detailLoading" class="py-8 text-sm text-base-content/40 text-center">…</div>
-        <div v-else-if="bookingDetail" class="flex flex-col gap-5">
-          <!-- Action buttons -->
-          <div class="flex items-center gap-2 flex-wrap">
-            <button
-              v-if="bookingDetail.booking.status === 'active'"
-              class="btn btn-sm btn-outline"
-              @click="handleTogglePayment(bookingDetail!)"
-            >
+        <div v-else-if="bookingDetail" class="flex flex-col gap-6">
+          <!-- Action buttons: safe actions left, destructive right -->
+          <div v-if="bookingDetail.booking.status === 'active'" class="flex items-center gap-2">
+            <button class="btn btn-sm btn-outline" @click="handleTogglePayment(bookingDetail!)">
               {{ bookingDetail.booking.payment_status === "paid" ? t("adminBookings.markUnpaid") : t("adminBookings.markPaid") }}
             </button>
-            <button
-              v-if="bookingDetail.booking.status === 'active'"
-              class="btn btn-sm btn-outline"
-              @click="() => { detailDialogVisible = false; openEditDialog(bookingDetail!.booking); }"
-            >
+            <button class="btn btn-sm btn-outline" @click="() => { detailDialogVisible = false; openEditDialog(bookingDetail!.booking); }">
               {{ t("adminBookings.edit") }}
             </button>
-            <button
-              v-if="bookingDetail.booking.status === 'active'"
-              class="btn btn-sm btn-outline btn-error"
-              @click="handleCancelBooking"
-            >
+            <button class="btn btn-sm btn-outline btn-error ml-auto" @click="handleCancelBooking">
               {{ t("adminBookings.cancelBooking") }}
             </button>
           </div>
 
           <div v-if="detailError" class="alert alert-error text-sm">{{ detailError }}</div>
 
-          <!-- Booking info -->
-          <div class="grid grid-cols-2 gap-3 text-sm">
-            <div>
-              <span class="text-base-content/50">{{ t("adminBookings.checkIn") }}:</span>
-              <span class="ml-2">{{ formatDate(bookingDetail.booking.check_in) }}</span>
+          <!-- Booking info: label-left / value-right rows -->
+          <div class="divide-y divide-base-200 border border-base-200 rounded-xl overflow-hidden text-sm">
+            <div class="flex items-center justify-between px-4 py-2.5">
+              <span class="text-base-content/50">{{ t("adminBookings.checkIn") }}</span>
+              <span class="font-medium">{{ formatDate(bookingDetail.booking.check_in) }}</span>
             </div>
-            <div>
-              <span class="text-base-content/50">{{ t("adminBookings.checkOut") }}:</span>
-              <span class="ml-2">{{ formatDate(bookingDetail.booking.check_out) }}</span>
+            <div class="flex items-center justify-between px-4 py-2.5">
+              <span class="text-base-content/50">{{ t("adminBookings.checkOut") }}</span>
+              <span class="font-medium">{{ formatDate(bookingDetail.booking.check_out) }}</span>
             </div>
-            <div>
-              <span class="text-base-content/50">{{ t("adminBookings.status") }}:</span>
-              <span :class="['badge badge-sm ml-2', bookingDetail.booking.status === 'active' ? 'badge-success' : 'badge-error']">
+            <div class="flex items-center justify-between px-4 py-2.5">
+              <span class="text-base-content/50">{{ t("adminBookings.status") }}</span>
+              <span :class="['badge badge-sm', bookingDetail.booking.status === 'active' ? 'badge-success' : 'badge-error']">
                 {{ bookingDetail.booking.status === "active" ? t("adminBookings.statusActive") : t("adminBookings.statusCancelled") }}
               </span>
             </div>
-            <div>
-              <span class="text-base-content/50">{{ t("adminBookings.paymentStatus") }}:</span>
-              <span :class="['badge badge-sm ml-2', bookingDetail.booking.payment_status === 'paid' ? 'badge-info' : 'badge-ghost']">
+            <div class="flex items-center justify-between px-4 py-2.5">
+              <span class="text-base-content/50">{{ t("adminBookings.paymentStatus") }}</span>
+              <span :class="['badge badge-sm', bookingDetail.booking.payment_status === 'paid' ? 'badge-info' : 'badge-ghost']">
                 {{ bookingDetail.booking.payment_status === "paid" ? t("adminBookings.paymentPaid") : t("adminBookings.paymentUnpaid") }}
               </span>
             </div>
-            <div v-if="bookingDetail.booking.label">
-              <span class="text-base-content/50">{{ t("adminBookings.label") }}:</span>
-              <span class="ml-2">{{ bookingDetail.booking.label }}</span>
+            <div v-if="bookingDetail.booking.label" class="flex items-center justify-between px-4 py-2.5">
+              <span class="text-base-content/50">{{ t("adminBookings.label") }}</span>
+              <span class="font-medium">{{ bookingDetail.booking.label }}</span>
             </div>
-            <div v-if="bookingDetail.booking.note">
-              <span class="text-base-content/50">{{ t("adminBookings.note") }}:</span>
-              <span class="ml-2">{{ bookingDetail.booking.note }}</span>
+            <div v-if="bookingDetail.booking.note" class="flex items-start justify-between gap-8 px-4 py-2.5">
+              <span class="text-base-content/50 shrink-0">{{ t("adminBookings.note") }}</span>
+              <span class="text-right">{{ bookingDetail.booking.note }}</span>
             </div>
-            <div v-if="bookingDetail.booking.discount_type">
-              <span class="text-base-content/50">{{ t("adminBookings.discount") }}:</span>
-              <span class="ml-2">
-                {{ bookingDetail.booking.discount_type === "percentage" ? "%" : "₭" }}{{ bookingDetail.booking.discount_value }}
-              </span>
-            </div>
-            <template v-if="bookingDetail.booking.customer_name || bookingDetail.booking.customer_phone || bookingDetail.booking.customer_id_type">
-              <div class="col-span-2">
-                <div class="divider my-1 text-xs text-base-content/40">{{ t("adminBookings.customer") }}</div>
-              </div>
-              <div v-if="bookingDetail.booking.customer_name">
-                <span class="text-base-content/50">{{ t("adminBookings.customerName") }}:</span>
-                <span class="ml-2">{{ bookingDetail.booking.customer_name }}</span>
-              </div>
-              <div v-if="bookingDetail.booking.customer_phone">
-                <span class="text-base-content/50">{{ t("adminBookings.customerPhone") }}:</span>
-                <span class="ml-2">{{ bookingDetail.booking.customer_phone }}</span>
-              </div>
-              <div v-if="bookingDetail.booking.customer_id_type">
-                <span class="text-base-content/50">{{ t("adminBookings.customerIdType") }}:</span>
-                <span class="ml-2">{{ bookingDetail.booking.customer_id_type }}</span>
-              </div>
-              <div v-if="bookingDetail.booking.customer_id_number">
-                <span class="text-base-content/50">{{ t("adminBookings.customerIdNumber") }}:</span>
-                <span class="ml-2">{{ bookingDetail.booking.customer_id_number }}</span>
-              </div>
-            </template>
-            <div class="col-span-2">
-              <div class="flex flex-wrap gap-4 text-xs text-base-content/40 pt-1 border-t border-base-200">
-                <span>{{ t("adminBookings.createdAt") }}: <span class="text-base-content/60">{{ new Date(bookingDetail.booking.created_at).toLocaleString() }}</span></span>
-                <span>{{ t("adminBookings.createdBy") }}: <span class="text-base-content/60">{{ bookingDetail.booking.created_by_name || "—" }}</span></span>
-                <span>{{ t("adminBookings.lastEditedBy") }}: <span class="text-base-content/60">{{ bookingDetail.booking.updated_by_name || "—" }}</span></span>
-              </div>
+            <div v-if="bookingDetail.booking.discount_type" class="flex items-center justify-between px-4 py-2.5">
+              <span class="text-base-content/50">{{ t("adminBookings.discount") }}</span>
+              <span class="font-medium">{{ bookingDetail.booking.discount_type === "percentage" ? "%" : "₭" }}{{ bookingDetail.booking.discount_value }}</span>
             </div>
           </div>
 
+          <!-- Customer info -->
+          <template v-if="bookingDetail.booking.customer_name || bookingDetail.booking.customer_phone || bookingDetail.booking.customer_id_type">
+            <div>
+              <div class="flex items-center gap-3 mb-2">
+                <span class="text-xs font-semibold uppercase tracking-widest text-base-content/40 shrink-0">{{ t("adminBookings.customer") }}</span>
+                <div class="flex-1 h-px bg-base-200"></div>
+              </div>
+              <div class="divide-y divide-base-200 border border-base-200 rounded-xl overflow-hidden text-sm">
+                <div v-if="bookingDetail.booking.customer_name" class="flex items-center justify-between px-4 py-2.5">
+                  <span class="text-base-content/50">{{ t("adminBookings.customerName") }}</span>
+                  <span class="font-medium">{{ bookingDetail.booking.customer_name }}</span>
+                </div>
+                <div v-if="bookingDetail.booking.customer_phone" class="flex items-center justify-between px-4 py-2.5">
+                  <span class="text-base-content/50">{{ t("adminBookings.customerPhone") }}</span>
+                  <span>{{ bookingDetail.booking.customer_phone }}</span>
+                </div>
+                <div v-if="bookingDetail.booking.customer_id_type" class="flex items-center justify-between px-4 py-2.5">
+                  <span class="text-base-content/50">{{ t("adminBookings.customerIdType") }}</span>
+                  <span>{{ bookingDetail.booking.customer_id_type }}</span>
+                </div>
+                <div v-if="bookingDetail.booking.customer_id_number" class="flex items-center justify-between px-4 py-2.5">
+                  <span class="text-base-content/50">{{ t("adminBookings.customerIdNumber") }}</span>
+                  <span>{{ bookingDetail.booking.customer_id_number }}</span>
+                </div>
+              </div>
+            </div>
+          </template>
+
           <!-- Rooms -->
           <div>
-            <div class="divider my-1 text-xs text-base-content/40">{{ t("adminBookings.rooms") }}</div>
+            <div class="flex items-center gap-3 mb-2">
+              <span class="text-xs font-semibold uppercase tracking-widest text-base-content/40 shrink-0">{{ t("adminBookings.rooms") }}</span>
+              <div class="flex-1 h-px bg-base-200"></div>
+            </div>
             <div class="overflow-x-auto">
               <table class="table table-xs">
                 <thead>
@@ -771,7 +766,10 @@ function openDetailFromPanel(id: string) {
 
           <!-- Extra services -->
           <div>
-            <div class="divider my-1 text-xs text-base-content/40">{{ t("adminBookings.extraServices") }}</div>
+            <div class="flex items-center gap-3 mb-2">
+              <span class="text-xs font-semibold uppercase tracking-widest text-base-content/40 shrink-0">{{ t("adminBookings.extraServices") }}</span>
+              <div class="flex-1 h-px bg-base-200"></div>
+            </div>
             <div v-if="bookingDetail.extra_services.length > 0" class="overflow-x-auto mb-3">
               <table class="table table-xs">
                 <tbody>
@@ -790,33 +788,25 @@ function openDetailFromPanel(id: string) {
             <div v-if="bookingDetail.booking.status === 'active'" class="flex items-end gap-2">
               <label class="form-control">
                 <div class="label py-0.5"><span class="label-text text-xs">{{ t("adminBookings.serviceNamePlaceholder") }}</span></div>
-                <input
-                  v-model="extraServiceForm.name"
-                  class="input input-bordered input-sm w-40"
-                  :placeholder="t('adminBookings.serviceNamePlaceholder')"
-                />
+                <input v-model="extraServiceForm.name" class="input input-bordered input-sm w-40" :placeholder="t('adminBookings.serviceNamePlaceholder')" />
               </label>
               <label class="form-control">
                 <div class="label py-0.5"><span class="label-text text-xs">{{ t("adminBookings.serviceAmount") }}</span></div>
-                <input
-                  v-model.number="extraServiceForm.amount"
-                  type="number"
-                  min="0"
-                  class="input input-bordered input-sm w-28"
-                />
+                <input v-model.number="extraServiceForm.amount" type="number" min="0" class="input input-bordered input-sm w-28" />
               </label>
-              <button
-                class="btn btn-sm btn-neutral"
-                :disabled="!extraServiceForm.name || extraServiceForm.amount < 0"
-                @click="handleAddExtraService"
-              >{{ t("adminBookings.addExtraService") }}</button>
+              <button class="btn btn-sm btn-neutral" :disabled="!extraServiceForm.name || extraServiceForm.amount < 0" @click="handleAddExtraService">
+                {{ t("adminBookings.addExtraService") }}
+              </button>
             </div>
             <p v-if="extraServiceError" class="mt-1 text-xs text-error">{{ extraServiceError }}</p>
           </div>
 
           <!-- Documents -->
           <div>
-            <div class="divider my-1 text-xs text-base-content/40">{{ t("adminBookings.documents") }}</div>
+            <div class="flex items-center gap-3 mb-2">
+              <span class="text-xs font-semibold uppercase tracking-widest text-base-content/40 shrink-0">{{ t("adminBookings.documents") }}</span>
+              <div class="flex-1 h-px bg-base-200"></div>
+            </div>
             <div v-if="bookingDetail.documents.length > 0" class="flex flex-col gap-1.5 mb-3">
               <div
                 v-for="doc in bookingDetail.documents"
@@ -828,12 +818,9 @@ function openDetailFromPanel(id: string) {
                   <p class="text-sm truncate">{{ doc.filename }}</p>
                   <p class="text-xs text-base-content/40">{{ formatFileSize(doc.size) }} · {{ t("adminBookings.uploadedBy") }} {{ doc.uploaded_by_name }}</p>
                 </div>
-                <a
-                  :href="bookingsApi.documentDownloadUrl(bookingDetail!.booking.id, doc.id)"
-                  target="_blank"
-                  rel="noopener"
-                  class="btn btn-xs btn-ghost btn-info shrink-0"
-                >{{ t("adminBookings.downloading") }}</a>
+                <a :href="bookingsApi.documentDownloadUrl(bookingDetail!.booking.id, doc.id)" target="_blank" rel="noopener" class="btn btn-xs btn-ghost btn-info shrink-0">
+                  {{ t("adminBookings.downloading") }}
+                </a>
                 <button class="btn btn-xs btn-ghost btn-error shrink-0" @click="handleDeleteDocument(doc.id)">
                   {{ t("adminBookings.deleteDocument") }}
                 </button>
@@ -849,11 +836,14 @@ function openDetailFromPanel(id: string) {
             <p v-if="uploadError" class="mt-1 text-xs text-error">{{ uploadError }}</p>
           </div>
 
-          <!-- Total -->
-          <div class="flex justify-end pt-3 border-t border-base-200">
-            <span class="text-sm font-semibold">
-              {{ t("adminBookings.total") }}: ₭{{ formatPrice(computeTotal(bookingDetail)) }}
-            </span>
+          <!-- Total + audit trail -->
+          <div class="flex items-end justify-between pt-4 border-t border-base-200">
+            <div class="flex flex-col gap-0.5 text-xs text-base-content/40">
+              <span>{{ t("adminBookings.createdAt") }}: <span class="text-base-content/60">{{ new Date(bookingDetail.booking.created_at).toLocaleString() }}</span></span>
+              <span>{{ t("adminBookings.createdBy") }}: <span class="text-base-content/60">{{ bookingDetail.booking.created_by_name || "—" }}</span></span>
+              <span>{{ t("adminBookings.lastEditedBy") }}: <span class="text-base-content/60">{{ bookingDetail.booking.updated_by_name || "—" }}</span></span>
+            </div>
+            <span class="text-lg font-bold">₭{{ formatPrice(computeTotal(bookingDetail)) }}</span>
           </div>
         </div>
       </div>
