@@ -2,7 +2,6 @@
 import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 import AppShell from "@/components/AppShell.vue";
-import Button from "primevue/button";
 import { authApi } from "@/api/auth";
 import { ApiError } from "@/api/client";
 
@@ -27,11 +26,9 @@ async function handlePing() {
       <h1 class="text-lg font-semibold text-gray-900">{{ t("admin.title") }}</h1>
       <p class="mt-2 text-sm text-gray-600">{{ t("admin.description") }}</p>
 
-      <Button
-        :label="t('admin.pingButton')"
-        class="mt-4 rounded-md bg-gray-900 text-white px-4 py-2 text-sm font-medium hover:bg-gray-800"
-        @click="handlePing"
-      />
+      <button class="btn btn-sm mt-4 bg-gray-900 text-white hover:bg-gray-700 border-none" @click="handlePing">
+        {{ t("admin.pingButton") }}
+      </button>
       <p v-if="pingResult" class="mt-3 text-sm text-gray-700">{{ pingResult }}</p>
     </div>
   </AppShell>

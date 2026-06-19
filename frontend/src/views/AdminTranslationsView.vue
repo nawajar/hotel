@@ -3,8 +3,6 @@ import { computed, reactive, ref } from "vue";
 import { useQuery, useQueryClient } from "@tanstack/vue-query";
 import { useI18n } from "vue-i18n";
 import AppShell from "@/components/AppShell.vue";
-import InputText from "primevue/inputtext";
-import Button from "primevue/button";
 import { translationsApi } from "@/api/translations";
 import { flattenMessages } from "@/i18n/flatten";
 import { setMessageLive, type Locale } from "@/i18n";
@@ -45,8 +43,6 @@ function fieldKey(key: string, locale: Locale) {
 function valueFor(key: string, locale: Locale): string {
   const draft = drafts[fieldKey(key, locale)];
   if (draft !== undefined) return draft;
-  // Falls back to the English default if a key was added without a Lao
-  // translation yet, matching vue-i18n's own fallbackLocale behavior at runtime.
   return overridesMap.value.get(key)?.get(locale) ?? defaults[locale][key] ?? defaults.en[key];
 }
 
@@ -107,60 +103,44 @@ async function reset(key: string, locale: Locale) {
 
           <div>
             <div class="flex items-center gap-2">
-              <InputText
-                :model-value="valueFor(key, 'en')"
-                class="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm"
-                @update:model-value="(v) => onInput(key, 'en', String(v))"
+              <input
+                :value="valueFor(key, 'en')"
+                class="input input-bordered input-xs w-full"
+                @input="onInput(key, 'en', ($event.target as HTMLInputElement).value)"
               />
-              <Button
-                :label="t('adminTranslations.save')"
-                :loading="savingField === fieldKey(key, 'en')"
-                class="text-xs px-2 py-1.5 rounded-md bg-gray-900 text-white whitespace-nowrap"
+              <button
+                class="btn btn-xs bg-gray-900 text-white hover:bg-gray-700 border-none whitespace-nowrap"
+                :class="savingField === fieldKey(key, 'en') ? 'loading' : ''"
+                :disabled="savingField === fieldKey(key, 'en')"
                 @click="save(key, 'en')"
-              />
+              >{{ t("adminTranslations.save") }}</button>
             </div>
-            <span v-if="savedField === fieldKey(key, 'en')" class="mt-1 inline-block text-xs text-green-600">{{
-              t("adminTranslations.saved")
-            }}</span>
-            <button
-              v-else-if="isOverridden(key, 'en')"
-              class="mt-1 text-xs text-gray-400 hover:text-gray-600 underline"
-              @click="reset(key, 'en')"
-            >
+            <span v-if="savedField === fieldKey(key, 'en')" class="mt-1 inline-block text-xs text-green-600">{{ t("adminTranslations.saved") }}</span>
+            <button v-else-if="isOverridden(key, 'en')" class="mt-1 text-xs text-gray-400 hover:text-gray-600 underline" @click="reset(key, 'en')">
               {{ t("adminTranslations.reset") }}
             </button>
-            <span v-else class="mt-1 inline-block text-xs text-gray-400">{{
-              t("adminTranslations.default")
-            }}</span>
+            <span v-else class="mt-1 inline-block text-xs text-gray-400">{{ t("adminTranslations.default") }}</span>
           </div>
 
           <div>
             <div class="flex items-center gap-2">
-              <InputText
-                :model-value="valueFor(key, 'lo')"
-                class="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm"
-                @update:model-value="(v) => onInput(key, 'lo', String(v))"
+              <input
+                :value="valueFor(key, 'lo')"
+                class="input input-bordered input-xs w-full"
+                @input="onInput(key, 'lo', ($event.target as HTMLInputElement).value)"
               />
-              <Button
-                :label="t('adminTranslations.save')"
-                :loading="savingField === fieldKey(key, 'lo')"
-                class="text-xs px-2 py-1.5 rounded-md bg-gray-900 text-white whitespace-nowrap"
+              <button
+                class="btn btn-xs bg-gray-900 text-white hover:bg-gray-700 border-none whitespace-nowrap"
+                :class="savingField === fieldKey(key, 'lo') ? 'loading' : ''"
+                :disabled="savingField === fieldKey(key, 'lo')"
                 @click="save(key, 'lo')"
-              />
+              >{{ t("adminTranslations.save") }}</button>
             </div>
-            <span v-if="savedField === fieldKey(key, 'lo')" class="mt-1 inline-block text-xs text-green-600">{{
-              t("adminTranslations.saved")
-            }}</span>
-            <button
-              v-else-if="isOverridden(key, 'lo')"
-              class="mt-1 text-xs text-gray-400 hover:text-gray-600 underline"
-              @click="reset(key, 'lo')"
-            >
+            <span v-if="savedField === fieldKey(key, 'lo')" class="mt-1 inline-block text-xs text-green-600">{{ t("adminTranslations.saved") }}</span>
+            <button v-else-if="isOverridden(key, 'lo')" class="mt-1 text-xs text-gray-400 hover:text-gray-600 underline" @click="reset(key, 'lo')">
               {{ t("adminTranslations.reset") }}
             </button>
-            <span v-else class="mt-1 inline-block text-xs text-gray-400">{{
-              t("adminTranslations.default")
-            }}</span>
+            <span v-else class="mt-1 inline-block text-xs text-gray-400">{{ t("adminTranslations.default") }}</span>
           </div>
         </div>
       </div>
