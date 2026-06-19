@@ -21,7 +21,19 @@
   "dashboard": {
     "title": "ໜ້າຫຼັກ",
     "welcome": "ສະບາຍດີ, {name}.",
-    "signedInAs": "ທ່ານໄດ້ເຂົ້າສູ່ລະບົບໃນຖານະ {role}."
+    "signedInAs": "ທ່ານໄດ້ເຂົ້າສູ່ລະບົບໃນຖານະ {role}.",
+    "notes": "ບັນທຶກກະ",
+    "newNote": "ບັນທຶກໃໝ່",
+    "notesEmpty": "ຍັງບໍ່ມີບັນທຶກ — ເພີ່ມເພື່ອແຈ້ງກະຕໍ່ໄປ.",
+    "notesRemaining": "ເປີດຢູ່",
+    "notePlaceholder": "ເພີ່ມບັນທຶກ…",
+    "noteAdd": "ໂພສບັນທຶກ",
+    "noteDelete": "ລຶບ",
+    "greeting": "ສະບາຍດີ, {name}",
+    "dateJustNow": "ຫາກໍ່ນີ້",
+    "dateMinutesAgo": "{n} ນາທີກ່ອນ",
+    "dateHoursAgo": "{n} ຊົ່ວໂມງກ່ອນ",
+    "dateYesterday": "ມື້ວານ"
   },
   "admin": {
     "title": "ຜູ້ບໍລິຫານ",
@@ -144,6 +156,8 @@
     "extraRevenue": "ລາຍໄດ້ເສີມ",
     "discountTotal": "ສ່ວນຫຼຸດ",
     "netRevenue": "ລາຍໄດ້ສຸດທິ",
+    "downloadPdf": "ດາວໂຫຼດ PDF",
+    "paidDate": "ວັນທີຊຳລະ",
     "optional": "ບໍ່ບັງຄັບ",
     "addCustomer": "ຂໍ້ມູນລູກຄ້າ",
     "statTotalRooms": "ຫ້ອງທັງໝົດ",
@@ -177,7 +191,10 @@
     "confirmDeleteDocument": "ລຶບໄຟລ໌ນີ້ບໍ?",
     "uploadedBy": "ໂດຍ",
     "docAllowedTypes": "JPG, PNG, PDF, WebP — ສູງສຸດ 10 MB",
-    "downloading": "ເປີດ"
+    "downloading": "ເປີດ",
+    "noBookings": "ບໍ່ມີການຈອງ",
+    "paid": "ຊຳລະແລ້ວ",
+    "unpaid": "ຍັງບໍ່ຊຳລະ"
   },
   "calendar": {
     "title": "ປະຕິທິນ",

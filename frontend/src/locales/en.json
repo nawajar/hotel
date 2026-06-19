@@ -21,7 +21,19 @@
   "dashboard": {
     "title": "Dashboard",
     "welcome": "Welcome, {name}.",
-    "signedInAs": "You're signed in as {role}."
+    "signedInAs": "You're signed in as {role}.",
+    "notes": "Shift Notes",
+    "newNote": "New Note",
+    "notesEmpty": "No notes yet — add one to brief the next shift.",
+    "notesRemaining": "open",
+    "notePlaceholder": "Add a note…",
+    "noteAdd": "Post Note",
+    "noteDelete": "Delete",
+    "greeting": "Hey, {name}",
+    "dateJustNow": "just now",
+    "dateMinutesAgo": "{n}m ago",
+    "dateHoursAgo": "{n}h ago",
+    "dateYesterday": "Yesterday"
   },
   "admin": {
     "title": "Admin",
@@ -144,6 +156,8 @@
     "extraRevenue": "Extra revenue",
     "discountTotal": "Discount",
     "netRevenue": "Net revenue",
+    "downloadPdf": "Download PDF",
+    "paidDate": "Date Paid",
     "optional": "optional",
     "addCustomer": "Customer info",
     "statTotalRooms": "Total rooms",
@@ -177,7 +191,10 @@
     "confirmDeleteDocument": "Remove this file?",
     "uploadedBy": "by",
     "docAllowedTypes": "JPG, PNG, PDF, WebP — max 10 MB",
-    "downloading": "Open"
+    "downloading": "Open",
+    "noBookings": "No bookings",
+    "paid": "Paid",
+    "unpaid": "Unpaid"
   },
   "calendar": {
     "title": "Calendar",

@@ -413,6 +413,44 @@ function formatPrice(price: number) {
 const isPending = computed(
   () => createBookingMutation.isPending.value || updateBookingMutation.isPending.value,
 );
+
+// --- Stat panel ---
+type StatType = "occupied" | "check_ins" | "check_outs" | "needs_attention";
+const statPanel = ref<{ visible: boolean; type: StatType | null }>({ visible: false, type: null });
+
+const statPanelTitle = computed(() => {
+  switch (statPanel.value.type) {
+    case "occupied": return t("adminBookings.statOccupied");
+    case "check_ins": return t("adminBookings.statCheckInsToday");
+    case "check_outs": return t("adminBookings.statCheckOutsToday");
+    case "needs_attention": return t("adminBookings.statNeedsAttention");
+    default: return "";
+  }
+});
+
+const statPanelBookings = computed(() => {
+  if (!bookings.value || !statPanel.value.type) return [];
+  return bookings.value.filter((b) => {
+    if (b.status !== "active") return false;
+    const ci = b.check_in.slice(0, 10);
+    const co = b.check_out.slice(0, 10);
+    switch (statPanel.value.type) {
+      case "occupied": return ci <= todayDate && co > todayDate;
+      case "check_ins": return ci === todayDate;
+      case "check_outs": return co === todayDate;
+      case "needs_attention": return b.label === "needs_attention";
+    }
+  });
+});
+
+function openStatPanel(type: StatType) {
+  statPanel.value = { visible: true, type };
+}
+
+function openDetailFromPanel(id: string) {
+  statPanel.value.visible = false;
+  openDetail(id);
+}
 </script>
 
 <template>
@@ -427,27 +465,28 @@ const isPending = computed(
         <p class="text-xs text-green-700 mb-1">{{ t("adminBookings.statAvailable") }}</p>
         <p class="text-2xl font-bold text-green-700">{{ todaySummary?.available_now ?? "—" }}</p>
       </div>
-      <div class="bg-orange-50 rounded-lg border border-orange-200 p-4">
+      <button class="bg-orange-50 rounded-lg border border-orange-200 p-4 text-left hover:bg-orange-100 transition-colors" @click="openStatPanel('occupied')">
         <p class="text-xs text-orange-700 mb-1">{{ t("adminBookings.statOccupied") }}</p>
         <p class="text-2xl font-bold text-orange-700">{{ todaySummary?.occupied_now ?? "—" }}</p>
-      </div>
-      <div class="bg-blue-50 rounded-lg border border-blue-200 p-4">
+      </button>
+      <button class="bg-blue-50 rounded-lg border border-blue-200 p-4 text-left hover:bg-blue-100 transition-colors" @click="openStatPanel('check_ins')">
         <p class="text-xs text-blue-700 mb-1">{{ t("adminBookings.statCheckInsToday") }}</p>
         <p class="text-2xl font-bold text-blue-700">{{ todaySummary?.check_ins_today ?? "—" }}</p>
-      </div>
-      <div class="bg-purple-50 rounded-lg border border-purple-200 p-4">
+      </button>
+      <button class="bg-purple-50 rounded-lg border border-purple-200 p-4 text-left hover:bg-purple-100 transition-colors" @click="openStatPanel('check_outs')">
         <p class="text-xs text-purple-700 mb-1">{{ t("adminBookings.statCheckOutsToday") }}</p>
         <p class="text-2xl font-bold text-purple-700">
           {{ todaySummary?.check_outs_today ?? "—" }}
         </p>
-      </div>
-      <div
+      </button>
+      <button
         :class="[
-          'rounded-lg border p-4',
+          'rounded-lg border p-4 text-left transition-colors',
           todaySummary && todaySummary.needs_attention > 0
-            ? 'bg-red-50 border-red-300'
-            : 'bg-gray-50 border-gray-200',
+            ? 'bg-red-50 border-red-300 hover:bg-red-100'
+            : 'bg-gray-50 border-gray-200 hover:bg-gray-100',
         ]"
+        @click="openStatPanel('needs_attention')"
       >
         <p
           :class="[
@@ -465,7 +504,7 @@ const isPending = computed(
         >
           {{ todaySummary?.needs_attention ?? "—" }}
         </p>
-      </div>
+      </button>
     </div>
 
     <div class="bg-white rounded-lg border border-gray-200 p-6">
@@ -1314,6 +1353,47 @@ const isPending = computed(
           />
         </div>
       </template>
+    </Dialog>
+
+    <!-- Stat panel -->
+    <Dialog
+      v-model:visible="statPanel.visible"
+      :header="statPanelTitle"
+      modal
+      :draggable="false"
+      :pt="{
+        mask: { class: 'fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4' },
+        root: { class: 'bg-white rounded-xl shadow-2xl w-full max-w-[480px] flex flex-col max-h-[80vh]' },
+        header: { class: 'flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100' },
+        title: { class: 'text-base font-semibold text-gray-900' },
+        closeButton: { class: 'w-8 h-8 flex items-center justify-center rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors' },
+        closeIcon: { class: 'w-4 h-4' },
+        content: { class: 'px-6 py-4 overflow-y-auto' },
+      }"
+    >
+      <div v-if="statPanelBookings.length === 0" class="py-8 text-center text-sm text-gray-400">
+        {{ t("adminBookings.noBookings") }}
+      </div>
+      <div v-else class="flex flex-col gap-2">
+        <button
+          v-for="b in statPanelBookings"
+          :key="b.id"
+          class="w-full text-left rounded-lg border border-gray-100 px-4 py-3 hover:bg-gray-50 transition-colors"
+          @click="openDetailFromPanel(b.id)"
+        >
+          <div class="flex items-center justify-between gap-2">
+            <span class="font-mono text-xs font-semibold text-gray-500 bg-gray-100 rounded px-1.5 py-0.5">{{ b.booking_ref }}</span>
+            <span
+              :class="[
+                'text-xs font-medium rounded-full px-2 py-0.5',
+                b.payment_status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700',
+              ]"
+            >{{ b.payment_status === 'paid' ? t('adminBookings.paid') : t('adminBookings.unpaid') }}</span>
+          </div>
+          <p class="mt-1 text-sm font-medium text-gray-800">{{ b.customer_name || "—" }}</p>
+          <p class="text-xs text-gray-400 mt-0.5">{{ formatDate(b.check_in) }} → {{ formatDate(b.check_out) }}</p>
+        </button>
+      </div>
     </Dialog>
   </AppShell>
 </template>
