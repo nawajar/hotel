@@ -446,174 +446,180 @@ function openDetailFromPanel(id: string) {
   <AppShell>
     <!-- Today's snapshot bar -->
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-      <div class="bg-white rounded-lg border border-gray-200 p-4">
-        <p class="text-xs text-gray-500 mb-1">{{ t("adminBookings.statTotalRooms") }}</p>
-        <p class="text-2xl font-bold text-gray-900">{{ todaySummary?.total_rooms ?? "—" }}</p>
+      <!-- Total rooms -->
+      <div class="bg-base-100 rounded-xl border border-base-200 shadow-sm px-5 py-4 border-t-2 border-t-base-300">
+        <p class="text-[0.65rem] font-semibold uppercase tracking-widest text-base-content/40 h-8 flex items-start">{{ t("adminBookings.statTotalRooms") }}</p>
+        <p class="text-3xl font-bold text-base-content">{{ todaySummary?.total_rooms ?? "—" }}</p>
       </div>
-      <div class="bg-green-50 rounded-lg border border-green-200 p-4">
-        <p class="text-xs text-green-700 mb-1">{{ t("adminBookings.statAvailable") }}</p>
-        <p class="text-2xl font-bold text-green-700">{{ todaySummary?.available_now ?? "—" }}</p>
+      <!-- Available -->
+      <div class="bg-base-100 rounded-xl border border-base-200 shadow-sm px-5 py-4 border-t-2 border-t-emerald-400">
+        <p class="text-[0.65rem] font-semibold uppercase tracking-widest text-base-content/40 h-8 flex items-start">{{ t("adminBookings.statAvailable") }}</p>
+        <p class="text-3xl font-bold text-base-content">{{ todaySummary?.available_now ?? "—" }}</p>
       </div>
-      <button class="bg-orange-50 rounded-lg border border-orange-200 p-4 text-left hover:bg-orange-100 transition-colors" @click="openStatPanel('occupied')">
-        <p class="text-xs text-orange-700 mb-1">{{ t("adminBookings.statOccupied") }}</p>
-        <p class="text-2xl font-bold text-orange-700">{{ todaySummary?.occupied_now ?? "—" }}</p>
-      </button>
-      <button class="bg-blue-50 rounded-lg border border-blue-200 p-4 text-left hover:bg-blue-100 transition-colors" @click="openStatPanel('check_ins')">
-        <p class="text-xs text-blue-700 mb-1">{{ t("adminBookings.statCheckInsToday") }}</p>
-        <p class="text-2xl font-bold text-blue-700">{{ todaySummary?.check_ins_today ?? "—" }}</p>
-      </button>
-      <button class="bg-purple-50 rounded-lg border border-purple-200 p-4 text-left hover:bg-purple-100 transition-colors" @click="openStatPanel('check_outs')">
-        <p class="text-xs text-purple-700 mb-1">{{ t("adminBookings.statCheckOutsToday") }}</p>
-        <p class="text-2xl font-bold text-purple-700">{{ todaySummary?.check_outs_today ?? "—" }}</p>
-      </button>
-      <button
-        :class="[
-          'rounded-lg border p-4 text-left transition-colors',
-          todaySummary && todaySummary.needs_attention > 0
-            ? 'bg-red-50 border-red-300 hover:bg-red-100'
-            : 'bg-gray-50 border-gray-200 hover:bg-gray-100',
-        ]"
+      <!-- Occupied -->
+      <div
+        class="bg-base-100 rounded-xl border border-base-200 shadow-sm px-5 py-4 border-t-2 border-t-amber-400 cursor-pointer hover:bg-base-200/60 transition-colors"
+        @click="openStatPanel('occupied')"
+      >
+        <p class="text-[0.65rem] font-semibold uppercase tracking-widest text-base-content/40 h-8 flex items-start">{{ t("adminBookings.statOccupied") }}</p>
+        <p class="text-3xl font-bold text-base-content">{{ todaySummary?.occupied_now ?? "—" }}</p>
+      </div>
+      <!-- Check-ins today -->
+      <div
+        class="bg-base-100 rounded-xl border border-base-200 shadow-sm px-5 py-4 border-t-2 border-t-sky-400 cursor-pointer hover:bg-base-200/60 transition-colors"
+        @click="openStatPanel('check_ins')"
+      >
+        <p class="text-[0.65rem] font-semibold uppercase tracking-widest text-base-content/40 h-8 flex items-start">{{ t("adminBookings.statCheckInsToday") }}</p>
+        <p class="text-3xl font-bold text-base-content">{{ todaySummary?.check_ins_today ?? "—" }}</p>
+      </div>
+      <!-- Check-outs today -->
+      <div
+        class="bg-base-100 rounded-xl border border-base-200 shadow-sm px-5 py-4 border-t-2 border-t-violet-400 cursor-pointer hover:bg-base-200/60 transition-colors"
+        @click="openStatPanel('check_outs')"
+      >
+        <p class="text-[0.65rem] font-semibold uppercase tracking-widest text-base-content/40 h-8 flex items-start">{{ t("adminBookings.statCheckOutsToday") }}</p>
+        <p class="text-3xl font-bold text-base-content">{{ todaySummary?.check_outs_today ?? "—" }}</p>
+      </div>
+      <!-- Needs attention -->
+      <div
+        class="bg-base-100 rounded-xl border border-base-200 shadow-sm px-5 py-4 border-t-2 cursor-pointer hover:bg-base-200/60 transition-colors"
+        :class="todaySummary && todaySummary.needs_attention > 0 ? 'border-t-red-500' : 'border-t-base-300'"
         @click="openStatPanel('needs_attention')"
       >
-        <p :class="['text-xs mb-1', todaySummary && todaySummary.needs_attention > 0 ? 'text-red-700' : 'text-gray-500']">
-          {{ t("adminBookings.statNeedsAttention") }}
-        </p>
-        <p :class="['text-2xl font-bold', todaySummary && todaySummary.needs_attention > 0 ? 'text-red-700' : 'text-gray-400']">
+        <p class="text-[0.65rem] font-semibold uppercase tracking-widest text-base-content/40 h-8 flex items-start">{{ t("adminBookings.statNeedsAttention") }}</p>
+        <p class="text-3xl font-bold" :class="todaySummary && todaySummary.needs_attention > 0 ? 'text-red-500' : 'text-base-content'">
           {{ todaySummary?.needs_attention ?? "—" }}
         </p>
-      </button>
+      </div>
     </div>
 
-    <div class="bg-white rounded-lg border border-gray-200 p-6">
-      <!-- Header -->
-      <div class="flex items-center justify-between mb-4">
-        <h1 class="text-lg font-semibold text-gray-900">{{ t("adminBookings.title") }}</h1>
-        <button class="btn btn-sm bg-gray-900 text-white hover:bg-gray-700 border-none" @click="openAddDialog">
-          {{ t("adminBookings.add") }}
-        </button>
-      </div>
-
-      <!-- Filter bar -->
-      <div class="flex flex-wrap items-center gap-3 mb-4">
-        <div class="flex rounded-lg border border-gray-200 overflow-hidden">
-          <button
-            v-for="tab in (['today', 'upcoming', 'all'] as FilterTab[])"
-            :key="tab"
-            :class="[
-              'px-4 py-1.5 text-sm font-medium transition-colors',
-              activeTab === tab ? 'bg-gray-900 text-white' : 'bg-white text-gray-600 hover:bg-gray-50',
-            ]"
-            @click="onTabChange(tab)"
-          >
-            {{ tab === "today" ? t("adminBookings.filterToday") : tab === "upcoming" ? t("adminBookings.filterUpcoming") : t("adminBookings.filterAll") }}
+    <!-- Main card -->
+    <div class="card bg-base-100 shadow-sm">
+      <div class="card-body p-6">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="card-title text-base">{{ t("adminBookings.title") }}</h2>
+          <button class="btn btn-sm btn-neutral" @click="openAddDialog">
+            {{ t("adminBookings.add") }}
           </button>
         </div>
 
-        <select
-          :value="statusFilter"
-          class="select select-bordered select-sm text-sm"
-          @change="onStatusChange(($event.target as HTMLSelectElement).value as '' | 'active' | 'cancelled')"
-        >
-          <option value="">{{ t("adminBookings.filterStatusAll") }}</option>
-          <option value="active">{{ t("adminBookings.filterStatusActive") }}</option>
-          <option value="cancelled">{{ t("adminBookings.filterStatusCancelled") }}</option>
-        </select>
+        <!-- Filter bar -->
+        <div class="flex flex-wrap items-center gap-3 mb-4">
+          <div class="join">
+            <button
+              v-for="tab in (['today', 'upcoming', 'all'] as FilterTab[])"
+              :key="tab"
+              :class="['btn btn-sm join-item', activeTab === tab ? 'btn-neutral' : 'btn-outline']"
+              @click="onTabChange(tab)"
+            >
+              {{ tab === "today" ? t("adminBookings.filterToday") : tab === "upcoming" ? t("adminBookings.filterUpcoming") : t("adminBookings.filterAll") }}
+            </button>
+          </div>
 
-        <span class="ml-auto text-xs text-gray-400">
-          {{ filteredBookings.length }} {{ filteredBookings.length === 1 ? "booking" : "bookings" }}
-        </span>
-      </div>
-
-      <!-- Table -->
-      <div v-if="bookingsLoading" class="py-8 text-sm text-gray-400 text-center">…</div>
-      <table v-else class="w-full text-sm">
-        <thead>
-          <tr class="text-left text-gray-500 border-b border-gray-200">
-            <th class="py-2 pr-4 font-medium">{{ t("adminBookings.bookingRef") }}</th>
-            <th class="py-2 pr-4 font-medium">{{ t("adminBookings.status") }}</th>
-            <th class="py-2 pr-4 font-medium">{{ t("adminBookings.paymentStatus") }}</th>
-            <th class="py-2 pr-4 font-medium">{{ t("adminBookings.checkIn") }}</th>
-            <th class="py-2 pr-4 font-medium">{{ t("adminBookings.checkOut") }}</th>
-            <th class="py-2 pr-4 font-medium">{{ t("adminBookings.customer") }}</th>
-            <th class="py-2 font-medium"></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="pagedBookings.length === 0">
-            <td colspan="7" class="py-8 text-center text-sm text-gray-400">
-              {{ t("adminBookings.emptyState") }}
-            </td>
-          </tr>
-          <tr
-            v-for="booking in pagedBookings"
-            :key="booking.id"
-            class="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+          <select
+            :value="statusFilter"
+            class="select select-bordered select-sm"
+            @change="onStatusChange(($event.target as HTMLSelectElement).value as '' | 'active' | 'cancelled')"
           >
-            <td class="py-2 pr-4 font-mono text-gray-900">{{ booking.booking_ref }}</td>
-            <td class="py-2 pr-4">
-              <span :class="['badge badge-sm', booking.status === 'active' ? 'badge-success' : 'badge-error']">
-                {{ booking.status === "active" ? t("adminBookings.statusActive") : t("adminBookings.statusCancelled") }}
-              </span>
-            </td>
-            <td class="py-2 pr-4">
-              <span :class="['badge badge-sm', booking.payment_status === 'paid' ? 'badge-info' : 'badge-ghost']">
-                {{ booking.payment_status === "paid" ? t("adminBookings.paymentPaid") : t("adminBookings.paymentUnpaid") }}
-              </span>
-            </td>
-            <td class="py-2 pr-4 text-gray-600">{{ formatDate(booking.check_in) }}</td>
-            <td class="py-2 pr-4 text-gray-600">{{ formatDate(booking.check_out) }}</td>
-            <td class="py-2 pr-4 text-gray-500 text-xs">{{ booking.customer_name ?? "—" }}</td>
-            <td class="py-2 flex items-center gap-1">
-              <button class="btn btn-ghost btn-xs text-gray-400 hover:text-blue-600" :title="t('adminBookings.view')" @click="openDetail(booking.id)">
-                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                  <circle cx="12" cy="12" r="3"/>
-                </svg>
-              </button>
-              <button
-                v-if="booking.status === 'active'"
-                class="btn btn-ghost btn-xs text-gray-400 hover:text-gray-700"
-                :title="t('adminBookings.edit')"
-                @click="openEditDialog(booking)"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                </svg>
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+            <option value="">{{ t("adminBookings.filterStatusAll") }}</option>
+            <option value="active">{{ t("adminBookings.filterStatusActive") }}</option>
+            <option value="cancelled">{{ t("adminBookings.filterStatusCancelled") }}</option>
+          </select>
 
-      <!-- Pagination -->
-      <div v-if="totalPages > 1" class="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
-        <button class="btn btn-sm btn-outline" :disabled="currentPage <= 1" @click="currentPage--">
-          {{ t("adminBookings.prevPage") }}
-        </button>
-        <span class="text-xs text-gray-500">
-          {{ t("adminBookings.pageOf", { page: currentPage, total: totalPages }) }}
-        </span>
-        <button class="btn btn-sm btn-outline" :disabled="currentPage >= totalPages" @click="currentPage++">
-          {{ t("adminBookings.nextPage") }}
-        </button>
+          <span class="ml-auto text-xs text-base-content/50">
+            {{ filteredBookings.length }} {{ filteredBookings.length === 1 ? "booking" : "bookings" }}
+          </span>
+        </div>
+
+        <!-- Table -->
+        <div v-if="bookingsLoading" class="py-8 text-sm text-base-content/40 text-center">…</div>
+        <div v-else class="overflow-x-auto">
+          <table class="table table-sm">
+            <thead>
+              <tr>
+                <th>{{ t("adminBookings.bookingRef") }}</th>
+                <th>{{ t("adminBookings.status") }}</th>
+                <th>{{ t("adminBookings.paymentStatus") }}</th>
+                <th>{{ t("adminBookings.checkIn") }}</th>
+                <th>{{ t("adminBookings.checkOut") }}</th>
+                <th>{{ t("adminBookings.customer") }}</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-if="pagedBookings.length === 0">
+                <td colspan="7" class="py-8 text-center text-base-content/40">
+                  {{ t("adminBookings.emptyState") }}
+                </td>
+              </tr>
+              <tr v-for="booking in pagedBookings" :key="booking.id" class="hover">
+                <td class="font-mono font-medium">{{ booking.booking_ref }}</td>
+                <td>
+                  <span :class="['badge badge-sm', booking.status === 'active' ? 'badge-success' : 'badge-error']">
+                    {{ booking.status === "active" ? t("adminBookings.statusActive") : t("adminBookings.statusCancelled") }}
+                  </span>
+                </td>
+                <td>
+                  <span :class="['badge badge-sm', booking.payment_status === 'paid' ? 'badge-info' : 'badge-ghost']">
+                    {{ booking.payment_status === "paid" ? t("adminBookings.paymentPaid") : t("adminBookings.paymentUnpaid") }}
+                  </span>
+                </td>
+                <td>{{ formatDate(booking.check_in) }}</td>
+                <td>{{ formatDate(booking.check_out) }}</td>
+                <td class="text-xs text-base-content/50">{{ booking.customer_name ?? "—" }}</td>
+                <td>
+                  <div class="flex items-center gap-1">
+                    <button class="btn btn-ghost btn-xs" :title="t('adminBookings.view')" @click="openDetail(booking.id)">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                      </svg>
+                    </button>
+                    <button
+                      v-if="booking.status === 'active'"
+                      class="btn btn-ghost btn-xs"
+                      :title="t('adminBookings.edit')"
+                      @click="openEditDialog(booking)"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                      </svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <div v-if="totalPages > 1" class="flex items-center justify-between mt-4 pt-4 border-t border-base-200">
+          <button class="btn btn-sm btn-outline" :disabled="currentPage <= 1" @click="currentPage--">
+            {{ t("adminBookings.prevPage") }}
+          </button>
+          <span class="text-xs text-base-content/50">
+            {{ t("adminBookings.pageOf", { page: currentPage, total: totalPages }) }}
+          </span>
+          <button class="btn btn-sm btn-outline" :disabled="currentPage >= totalPages" @click="currentPage++">
+            {{ t("adminBookings.nextPage") }}
+          </button>
+        </div>
       </div>
     </div>
 
     <!-- Booking Detail Dialog -->
     <dialog ref="detailDialogEl" class="modal" @close="detailDialogVisible = false">
       <div class="modal-box w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <!-- Header -->
         <div class="flex items-center justify-between mb-4">
-          <span class="font-mono font-semibold text-gray-900">
-            {{ bookingDetail?.booking.booking_ref ?? "…" }}
-          </span>
+          <span class="font-mono font-semibold">{{ bookingDetail?.booking.booking_ref ?? "…" }}</span>
           <form method="dialog">
             <button class="btn btn-sm btn-circle btn-ghost">✕</button>
           </form>
         </div>
 
-        <div v-if="detailLoading" class="py-8 text-sm text-gray-400 text-center">…</div>
+        <div v-if="detailLoading" class="py-8 text-sm text-base-content/40 text-center">…</div>
         <div v-else-if="bookingDetail" class="flex flex-col gap-5">
           <!-- Action buttons -->
           <div class="flex items-center gap-2 flex-wrap">
@@ -645,162 +651,170 @@ function openDetailFromPanel(id: string) {
           <!-- Booking info -->
           <div class="grid grid-cols-2 gap-3 text-sm">
             <div>
-              <span class="text-gray-500">{{ t("adminBookings.checkIn") }}:</span>
-              <span class="ml-2 text-gray-900">{{ formatDate(bookingDetail.booking.check_in) }}</span>
+              <span class="text-base-content/50">{{ t("adminBookings.checkIn") }}:</span>
+              <span class="ml-2">{{ formatDate(bookingDetail.booking.check_in) }}</span>
             </div>
             <div>
-              <span class="text-gray-500">{{ t("adminBookings.checkOut") }}:</span>
-              <span class="ml-2 text-gray-900">{{ formatDate(bookingDetail.booking.check_out) }}</span>
+              <span class="text-base-content/50">{{ t("adminBookings.checkOut") }}:</span>
+              <span class="ml-2">{{ formatDate(bookingDetail.booking.check_out) }}</span>
             </div>
             <div>
-              <span class="text-gray-500">{{ t("adminBookings.status") }}:</span>
+              <span class="text-base-content/50">{{ t("adminBookings.status") }}:</span>
               <span :class="['badge badge-sm ml-2', bookingDetail.booking.status === 'active' ? 'badge-success' : 'badge-error']">
                 {{ bookingDetail.booking.status === "active" ? t("adminBookings.statusActive") : t("adminBookings.statusCancelled") }}
               </span>
             </div>
             <div>
-              <span class="text-gray-500">{{ t("adminBookings.paymentStatus") }}:</span>
+              <span class="text-base-content/50">{{ t("adminBookings.paymentStatus") }}:</span>
               <span :class="['badge badge-sm ml-2', bookingDetail.booking.payment_status === 'paid' ? 'badge-info' : 'badge-ghost']">
                 {{ bookingDetail.booking.payment_status === "paid" ? t("adminBookings.paymentPaid") : t("adminBookings.paymentUnpaid") }}
               </span>
             </div>
             <div v-if="bookingDetail.booking.label">
-              <span class="text-gray-500">{{ t("adminBookings.label") }}:</span>
-              <span class="ml-2 text-gray-900">{{ bookingDetail.booking.label }}</span>
+              <span class="text-base-content/50">{{ t("adminBookings.label") }}:</span>
+              <span class="ml-2">{{ bookingDetail.booking.label }}</span>
             </div>
             <div v-if="bookingDetail.booking.note">
-              <span class="text-gray-500">{{ t("adminBookings.note") }}:</span>
-              <span class="ml-2 text-gray-900">{{ bookingDetail.booking.note }}</span>
+              <span class="text-base-content/50">{{ t("adminBookings.note") }}:</span>
+              <span class="ml-2">{{ bookingDetail.booking.note }}</span>
             </div>
             <div v-if="bookingDetail.booking.discount_type">
-              <span class="text-gray-500">{{ t("adminBookings.discount") }}:</span>
-              <span class="ml-2 text-gray-900">
+              <span class="text-base-content/50">{{ t("adminBookings.discount") }}:</span>
+              <span class="ml-2">
                 {{ bookingDetail.booking.discount_type === "percentage" ? "%" : "₭" }}{{ bookingDetail.booking.discount_value }}
               </span>
             </div>
             <template v-if="bookingDetail.booking.customer_name || bookingDetail.booking.customer_phone || bookingDetail.booking.customer_id_type">
-              <div class="col-span-2 pt-1">
-                <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ t("adminBookings.customer") }}</span>
+              <div class="col-span-2">
+                <div class="divider my-1 text-xs text-base-content/40">{{ t("adminBookings.customer") }}</div>
               </div>
               <div v-if="bookingDetail.booking.customer_name">
-                <span class="text-gray-500">{{ t("adminBookings.customerName") }}:</span>
-                <span class="ml-2 text-gray-900">{{ bookingDetail.booking.customer_name }}</span>
+                <span class="text-base-content/50">{{ t("adminBookings.customerName") }}:</span>
+                <span class="ml-2">{{ bookingDetail.booking.customer_name }}</span>
               </div>
               <div v-if="bookingDetail.booking.customer_phone">
-                <span class="text-gray-500">{{ t("adminBookings.customerPhone") }}:</span>
-                <span class="ml-2 text-gray-900">{{ bookingDetail.booking.customer_phone }}</span>
+                <span class="text-base-content/50">{{ t("adminBookings.customerPhone") }}:</span>
+                <span class="ml-2">{{ bookingDetail.booking.customer_phone }}</span>
               </div>
               <div v-if="bookingDetail.booking.customer_id_type">
-                <span class="text-gray-500">{{ t("adminBookings.customerIdType") }}:</span>
-                <span class="ml-2 text-gray-900">{{ bookingDetail.booking.customer_id_type }}</span>
+                <span class="text-base-content/50">{{ t("adminBookings.customerIdType") }}:</span>
+                <span class="ml-2">{{ bookingDetail.booking.customer_id_type }}</span>
               </div>
               <div v-if="bookingDetail.booking.customer_id_number">
-                <span class="text-gray-500">{{ t("adminBookings.customerIdNumber") }}:</span>
-                <span class="ml-2 text-gray-900">{{ bookingDetail.booking.customer_id_number }}</span>
+                <span class="text-base-content/50">{{ t("adminBookings.customerIdNumber") }}:</span>
+                <span class="ml-2">{{ bookingDetail.booking.customer_id_number }}</span>
               </div>
             </template>
-            <div class="col-span-2 pt-2 border-t border-gray-100">
-              <div class="flex flex-wrap gap-4 text-xs text-gray-400">
-                <span>{{ t("adminBookings.createdBy") }}: <span class="text-gray-600">{{ bookingDetail.booking.created_by_name || "—" }}</span></span>
-                <span>{{ t("adminBookings.lastEditedBy") }}: <span class="text-gray-600">{{ bookingDetail.booking.updated_by_name || "—" }}</span></span>
+            <div class="col-span-2">
+              <div class="flex flex-wrap gap-4 text-xs text-base-content/40 pt-1 border-t border-base-200">
+                <span>{{ t("adminBookings.createdAt") }}: <span class="text-base-content/60">{{ new Date(bookingDetail.booking.created_at).toLocaleString() }}</span></span>
+                <span>{{ t("adminBookings.createdBy") }}: <span class="text-base-content/60">{{ bookingDetail.booking.created_by_name || "—" }}</span></span>
+                <span>{{ t("adminBookings.lastEditedBy") }}: <span class="text-base-content/60">{{ bookingDetail.booking.updated_by_name || "—" }}</span></span>
               </div>
             </div>
           </div>
 
           <!-- Rooms -->
           <div>
-            <h3 class="text-sm font-medium text-gray-700 mb-2">{{ t("adminBookings.rooms") }}</h3>
-            <table class="w-full text-sm">
-              <thead>
-                <tr class="text-left text-gray-500 border-b border-gray-100">
-                  <th class="py-1.5 pr-4 font-medium">{{ t("adminBookings.roomNumber") }}</th>
-                  <th class="py-1.5 pr-4 font-medium">{{ t("adminBookings.roomName") }}</th>
-                  <th class="py-1.5 pr-4 font-medium">{{ t("adminBookings.status") }}</th>
-                  <th class="py-1.5 pr-4 font-medium">{{ t("adminBookings.price") }}</th>
-                  <th class="py-1.5 font-medium"></th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="room in bookingDetail.rooms" :key="room.id" class="border-b border-gray-50">
-                  <td class="py-1.5 pr-4 text-gray-900">{{ room.room_number }}</td>
-                  <td class="py-1.5 pr-4 text-gray-600">{{ room.room_name }}</td>
-                  <td class="py-1.5 pr-4">
-                    <span :class="['badge badge-sm', room.status === 'active' ? 'badge-success' : 'badge-error']">{{ room.status }}</span>
-                  </td>
-                  <td class="py-1.5 pr-4 text-gray-600">₭{{ formatPrice(room.price_snapshot) }}</td>
-                  <td class="py-1.5">
-                    <button
-                      v-if="room.status === 'active' && bookingDetail!.booking.status === 'active'"
-                      class="text-xs text-red-600 hover:text-red-800"
-                      @click="handleCancelRoom(room.id)"
-                    >{{ t("adminBookings.cancelRoom") }}</button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+            <div class="divider my-1 text-xs text-base-content/40">{{ t("adminBookings.rooms") }}</div>
+            <div class="overflow-x-auto">
+              <table class="table table-xs">
+                <thead>
+                  <tr>
+                    <th>{{ t("adminBookings.roomNumber") }}</th>
+                    <th>{{ t("adminBookings.roomName") }}</th>
+                    <th>{{ t("adminBookings.status") }}</th>
+                    <th>{{ t("adminBookings.price") }}</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="room in bookingDetail.rooms" :key="room.id">
+                    <td class="font-medium">{{ room.room_number }}</td>
+                    <td>{{ room.room_name }}</td>
+                    <td>
+                      <span :class="['badge badge-xs', room.status === 'active' ? 'badge-success' : 'badge-error']">{{ room.status }}</span>
+                    </td>
+                    <td>₭{{ formatPrice(room.price_snapshot) }}</td>
+                    <td>
+                      <button
+                        v-if="room.status === 'active' && bookingDetail!.booking.status === 'active'"
+                        class="btn btn-xs btn-ghost btn-error"
+                        @click="handleCancelRoom(room.id)"
+                      >{{ t("adminBookings.cancelRoom") }}</button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
 
           <!-- Extra services -->
           <div>
-            <h3 class="text-sm font-medium text-gray-700 mb-2">{{ t("adminBookings.extraServices") }}</h3>
-            <table v-if="bookingDetail.extra_services.length > 0" class="w-full text-sm mb-3">
-              <tbody>
-                <tr v-for="svc in bookingDetail.extra_services" :key="svc.id" class="border-b border-gray-50">
-                  <td class="py-1.5 pr-4 text-gray-900">{{ svc.name }}</td>
-                  <td class="py-1.5 pr-4 text-gray-600">₭{{ formatPrice(svc.amount) }}</td>
-                  <td class="py-1.5">
-                    <button class="text-xs text-red-600 hover:text-red-800" @click="handleRemoveExtraService(svc.id)">
-                      {{ t("adminBookings.removeService") }}
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-            <div v-if="bookingDetail.booking.status === 'active'" class="flex items-end gap-2 mt-2">
-              <div class="flex flex-col gap-1">
-                <label class="text-xs text-gray-500">{{ t("adminBookings.serviceNamePlaceholder") }}</label>
+            <div class="divider my-1 text-xs text-base-content/40">{{ t("adminBookings.extraServices") }}</div>
+            <div v-if="bookingDetail.extra_services.length > 0" class="overflow-x-auto mb-3">
+              <table class="table table-xs">
+                <tbody>
+                  <tr v-for="svc in bookingDetail.extra_services" :key="svc.id">
+                    <td>{{ svc.name }}</td>
+                    <td>₭{{ formatPrice(svc.amount) }}</td>
+                    <td>
+                      <button class="btn btn-xs btn-ghost btn-error" @click="handleRemoveExtraService(svc.id)">
+                        {{ t("adminBookings.removeService") }}
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div v-if="bookingDetail.booking.status === 'active'" class="flex items-end gap-2">
+              <label class="form-control">
+                <div class="label py-0.5"><span class="label-text text-xs">{{ t("adminBookings.serviceNamePlaceholder") }}</span></div>
                 <input
                   v-model="extraServiceForm.name"
                   class="input input-bordered input-sm w-40"
                   :placeholder="t('adminBookings.serviceNamePlaceholder')"
                 />
-              </div>
-              <div class="flex flex-col gap-1">
-                <label class="text-xs text-gray-500">{{ t("adminBookings.serviceAmount") }}</label>
+              </label>
+              <label class="form-control">
+                <div class="label py-0.5"><span class="label-text text-xs">{{ t("adminBookings.serviceAmount") }}</span></div>
                 <input
                   v-model.number="extraServiceForm.amount"
                   type="number"
                   min="0"
                   class="input input-bordered input-sm w-28"
                 />
-              </div>
+              </label>
               <button
-                class="btn btn-sm bg-gray-900 text-white hover:bg-gray-700 border-none"
+                class="btn btn-sm btn-neutral"
                 :disabled="!extraServiceForm.name || extraServiceForm.amount < 0"
                 @click="handleAddExtraService"
               >{{ t("adminBookings.addExtraService") }}</button>
             </div>
-            <p v-if="extraServiceError" class="mt-1 text-xs text-red-600">{{ extraServiceError }}</p>
+            <p v-if="extraServiceError" class="mt-1 text-xs text-error">{{ extraServiceError }}</p>
           </div>
 
           <!-- Documents -->
           <div>
-            <h3 class="text-sm font-medium text-gray-700 mb-2">{{ t("adminBookings.documents") }}</h3>
+            <div class="divider my-1 text-xs text-base-content/40">{{ t("adminBookings.documents") }}</div>
             <div v-if="bookingDetail.documents.length > 0" class="flex flex-col gap-1.5 mb-3">
               <div
                 v-for="doc in bookingDetail.documents"
                 :key="doc.id"
-                class="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 px-3 py-2"
+                class="flex items-center gap-3 rounded-lg border border-base-200 bg-base-200/40 px-3 py-2"
               >
                 <span class="text-lg leading-none">{{ doc.mime_type === "application/pdf" ? "📄" : "🖼️" }}</span>
                 <div class="flex-1 min-w-0">
-                  <p class="text-sm text-gray-900 truncate">{{ doc.filename }}</p>
-                  <p class="text-xs text-gray-400">{{ formatFileSize(doc.size) }} · {{ t("adminBookings.uploadedBy") }} {{ doc.uploaded_by_name }}</p>
+                  <p class="text-sm truncate">{{ doc.filename }}</p>
+                  <p class="text-xs text-base-content/40">{{ formatFileSize(doc.size) }} · {{ t("adminBookings.uploadedBy") }} {{ doc.uploaded_by_name }}</p>
                 </div>
-                <a :href="bookingsApi.documentDownloadUrl(bookingDetail!.booking.id, doc.id)" target="_blank" rel="noopener" class="text-xs text-blue-600 hover:text-blue-800 shrink-0">
-                  {{ t("adminBookings.downloading") }}
-                </a>
-                <button class="text-xs text-red-500 hover:text-red-700 shrink-0" @click="handleDeleteDocument(doc.id)">
+                <a
+                  :href="bookingsApi.documentDownloadUrl(bookingDetail!.booking.id, doc.id)"
+                  target="_blank"
+                  rel="noopener"
+                  class="btn btn-xs btn-ghost btn-info shrink-0"
+                >{{ t("adminBookings.downloading") }}</a>
+                <button class="btn btn-xs btn-ghost btn-error shrink-0" @click="handleDeleteDocument(doc.id)">
                   {{ t("adminBookings.deleteDocument") }}
                 </button>
               </div>
@@ -810,14 +824,14 @@ function openDetailFromPanel(id: string) {
                 <span>{{ isUploading ? "…" : t("adminBookings.uploadDocument") }}</span>
                 <input type="file" class="sr-only" accept=".jpg,.jpeg,.png,.pdf,.webp,.gif" :disabled="isUploading" @change="handleFileUpload" />
               </label>
-              <span class="text-xs text-gray-400">{{ t("adminBookings.docAllowedTypes") }}</span>
+              <span class="text-xs text-base-content/40">{{ t("adminBookings.docAllowedTypes") }}</span>
             </div>
-            <p v-if="uploadError" class="mt-1 text-xs text-red-600">{{ uploadError }}</p>
+            <p v-if="uploadError" class="mt-1 text-xs text-error">{{ uploadError }}</p>
           </div>
 
           <!-- Total -->
-          <div class="flex justify-end border-t border-gray-100 pt-4">
-            <span class="text-sm font-semibold text-gray-900">
+          <div class="flex justify-end pt-3 border-t border-base-200">
+            <span class="text-sm font-semibold">
               {{ t("adminBookings.total") }}: ₭{{ formatPrice(computeTotal(bookingDetail)) }}
             </span>
           </div>
@@ -829,9 +843,8 @@ function openDetailFromPanel(id: string) {
     <!-- Create / Edit Dialog -->
     <dialog ref="formDialogEl" class="modal" @close="formDialogVisible = false">
       <div class="modal-box w-full max-w-xl max-h-[90vh] overflow-y-auto">
-        <!-- Header -->
         <div class="flex items-center justify-between mb-4">
-          <h3 class="font-semibold text-gray-900">
+          <h3 class="font-semibold">
             {{ editingBooking ? t("adminBookings.editTitle") : t("adminBookings.addTitle") }}
           </h3>
           <form method="dialog">
@@ -842,10 +855,10 @@ function openDetailFromPanel(id: string) {
         <form id="booking-form" class="flex flex-col gap-5" @submit.prevent="handleSubmit">
           <!-- Dates -->
           <div class="grid grid-cols-2 gap-4">
-            <div class="flex flex-col gap-1.5">
-              <label class="text-xs font-medium text-gray-700">
-                {{ t("adminBookings.checkIn") }} <span class="text-red-500 ml-0.5">*</span>
-              </label>
+            <label class="form-control">
+              <div class="label py-0.5">
+                <span class="label-text text-xs font-medium">{{ t("adminBookings.checkIn") }} <span class="text-error ml-0.5">*</span></span>
+              </div>
               <VueDatePicker
                 v-model="form.check_in"
                 model-type="yyyy-MM-dd"
@@ -856,11 +869,11 @@ function openDetailFromPanel(id: string) {
                 input-class-name="input input-bordered input-sm w-full"
                 auto-apply
               />
-            </div>
-            <div class="flex flex-col gap-1.5">
-              <label class="text-xs font-medium text-gray-700">
-                {{ t("adminBookings.checkOut") }} <span class="text-red-500 ml-0.5">*</span>
-              </label>
+            </label>
+            <label class="form-control">
+              <div class="label py-0.5">
+                <span class="label-text text-xs font-medium">{{ t("adminBookings.checkOut") }} <span class="text-error ml-0.5">*</span></span>
+              </div>
               <VueDatePicker
                 v-model="form.check_out"
                 model-type="yyyy-MM-dd"
@@ -870,26 +883,26 @@ function openDetailFromPanel(id: string) {
                 input-class-name="input input-bordered input-sm w-full"
                 auto-apply
               />
-            </div>
+            </label>
           </div>
-          <p v-if="nights > 0" class="text-xs text-gray-500 -mt-3">
+          <p v-if="nights > 0" class="text-xs text-base-content/50 -mt-3">
             {{ nights }} {{ t("adminBookings.nights") }}
           </p>
 
           <!-- Room selection (only for new bookings) -->
           <div v-if="!editingBooking" class="flex flex-col gap-1.5">
             <div class="flex items-center justify-between">
-              <label class="text-xs font-medium text-gray-700">
-                {{ t("adminBookings.rooms") }} <span class="text-red-500 ml-0.5">*</span>
-              </label>
-              <span v-if="roomAvailability" class="text-xs text-gray-500">
+              <span class="label-text text-xs font-medium">
+                {{ t("adminBookings.rooms") }} <span class="text-error ml-0.5">*</span>
+              </span>
+              <span v-if="roomAvailability" class="text-xs text-base-content/50">
                 {{ roomAvailability.filter((r) => r.is_available).length }} {{ t("adminBookings.roomsAvailableOf") }} {{ roomAvailability.length }}
               </span>
             </div>
-            <div v-if="!availabilityCheckIn || !availabilityCheckOut" class="rounded-lg border-2 border-dashed border-gray-200 p-6 text-center text-sm text-gray-400">
+            <div v-if="!availabilityCheckIn || !availabilityCheckOut" class="rounded-lg border-2 border-dashed border-base-300 p-6 text-center text-sm text-base-content/40">
               {{ t("adminBookings.pickDatesFirst") }}
             </div>
-            <div v-else-if="availabilityLoading" class="rounded-lg border border-gray-200 p-6 text-center text-sm text-gray-400">
+            <div v-else-if="availabilityLoading" class="rounded-lg border border-base-300 p-6 text-center text-sm text-base-content/40">
               {{ t("adminBookings.checkingAvailability") }}
             </div>
             <div v-else class="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto pr-1">
@@ -901,22 +914,22 @@ function openDetailFromPanel(id: string) {
                 :class="[
                   'text-left rounded-lg border-2 p-3 transition-all',
                   form.room_ids.includes(room.id)
-                    ? 'border-gray-900 bg-gray-900 text-white'
+                    ? 'border-neutral bg-neutral text-neutral-content'
                     : room.is_available
-                      ? 'border-gray-200 bg-white hover:border-gray-400 cursor-pointer'
-                      : 'border-gray-100 bg-gray-50 opacity-50 cursor-not-allowed',
+                      ? 'border-base-300 bg-base-100 hover:border-base-content/40 cursor-pointer'
+                      : 'border-base-200 bg-base-200 opacity-50 cursor-not-allowed',
                 ]"
                 @click="room.is_available && toggleRoom(room.id)"
               >
                 <div class="flex items-start justify-between gap-1">
                   <span class="text-sm font-semibold leading-tight">{{ t("adminBookings.roomNo") }} {{ room.room_number }}</span>
                   <span v-if="form.room_ids.includes(room.id)" class="text-xs bg-white/20 rounded px-1">✓</span>
-                  <span v-else-if="!room.is_available" class="text-xs text-red-500 shrink-0">{{ t("adminBookings.booked") }}</span>
+                  <span v-else-if="!room.is_available" class="text-xs text-error shrink-0">{{ t("adminBookings.booked") }}</span>
                 </div>
-                <div class="text-xs mt-0.5 truncate" :class="form.room_ids.includes(room.id) ? 'text-white/70' : 'text-gray-500'">
+                <div class="text-xs mt-0.5 truncate" :class="form.room_ids.includes(room.id) ? 'opacity-70' : 'text-base-content/50'">
                   {{ room.room_name }}
                 </div>
-                <div class="text-xs mt-1 font-medium" :class="form.room_ids.includes(room.id) ? 'text-white/90' : 'text-gray-700'">
+                <div class="text-xs mt-1 font-medium" :class="form.room_ids.includes(room.id) ? 'opacity-90' : ''">
                   ₭{{ formatPrice(room.price) }}
                 </div>
               </button>
@@ -924,33 +937,33 @@ function openDetailFromPanel(id: string) {
           </div>
 
           <!-- Label -->
-          <div class="flex flex-col gap-1.5">
-            <label class="text-xs font-medium text-gray-700">{{ t("adminBookings.label") }}</label>
-            <select v-model="form.label" class="select select-bordered select-sm w-full text-sm">
+          <label class="form-control">
+            <div class="label py-0.5"><span class="label-text text-xs font-medium">{{ t("adminBookings.label") }}</span></div>
+            <select v-model="form.label" class="select select-bordered select-sm w-full">
               <option value="">{{ t("adminBookings.labelNone") }}</option>
               <option value="check_in">{{ t("adminBookings.labelCheckIn") }}</option>
               <option value="check_out">{{ t("adminBookings.labelCheckOut") }}</option>
               <option value="needs_attention">{{ t("adminBookings.labelNeedsAttention") }}</option>
             </select>
-          </div>
+          </label>
 
           <!-- Note -->
-          <div class="flex flex-col gap-1.5">
-            <label class="text-xs font-medium text-gray-700">
-              {{ t("adminBookings.note") }}
-              <span class="ml-1 text-xs font-normal text-gray-400">({{ t("adminBookings.optional") }})</span>
-            </label>
+          <label class="form-control">
+            <div class="label py-0.5">
+              <span class="label-text text-xs font-medium">{{ t("adminBookings.note") }}</span>
+              <span class="label-text-alt text-xs text-base-content/40">({{ t("adminBookings.optional") }})</span>
+            </div>
             <textarea
               v-model="form.note"
-              class="textarea textarea-bordered textarea-sm w-full text-sm resize-none"
+              class="textarea textarea-bordered textarea-sm w-full resize-none"
               rows="2"
               :placeholder="t('adminBookings.notePlaceholder')"
             />
-          </div>
+          </label>
 
           <!-- Discount -->
           <div class="flex flex-col gap-2">
-            <label class="text-xs font-medium text-gray-700">{{ t("adminBookings.discount") }}</label>
+            <span class="label-text text-xs font-medium">{{ t("adminBookings.discount") }}</span>
             <div class="flex items-center gap-4">
               <label class="flex items-center gap-1.5 text-sm cursor-pointer">
                 <input v-model="form.discount_mode" type="radio" class="radio radio-sm" value="none" />
@@ -966,7 +979,7 @@ function openDetailFromPanel(id: string) {
               </label>
             </div>
             <div v-if="form.discount_mode !== 'none'" class="flex items-center gap-2">
-              <span class="text-sm text-gray-400">{{ form.discount_mode === "percentage" ? "%" : "₭" }}</span>
+              <span class="text-sm text-base-content/50">{{ form.discount_mode === "percentage" ? "%" : "₭" }}</span>
               <input
                 v-model.number="form.discount_value"
                 type="number"
@@ -978,42 +991,38 @@ function openDetailFromPanel(id: string) {
           </div>
 
           <!-- Payment status -->
-          <div class="flex flex-col gap-1.5">
-            <label class="text-xs font-medium text-gray-700">{{ t("adminBookings.paymentStatus") }}</label>
+          <label class="form-control">
+            <div class="label py-0.5"><span class="label-text text-xs font-medium">{{ t("adminBookings.paymentStatus") }}</span></div>
             <div class="flex items-center gap-3">
-              <input
-                v-model="form.payment_status"
-                type="checkbox"
-                class="toggle toggle-sm"
-              />
-              <span class="text-sm" :class="form.payment_status ? 'text-gray-800' : 'text-gray-400'">
+              <input v-model="form.payment_status" type="checkbox" class="toggle toggle-sm" />
+              <span class="text-sm" :class="form.payment_status ? '' : 'text-base-content/40'">
                 {{ form.payment_status ? t("adminBookings.paymentPaid") : t("adminBookings.paymentUnpaid") }}
               </span>
             </div>
-          </div>
+          </label>
 
           <!-- Customer info toggle -->
           <div>
-            <button type="button" class="text-xs text-blue-600 hover:text-blue-800" @click="showCustomer = !showCustomer">
+            <button type="button" class="btn btn-xs btn-ghost gap-1" @click="showCustomer = !showCustomer">
               {{ showCustomer ? "▾" : "▸" }} {{ t("adminBookings.addCustomer") }}
             </button>
             <div v-if="showCustomer" class="mt-3 grid grid-cols-2 gap-4">
-              <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-medium text-gray-700">{{ t("adminBookings.customerName") }}</label>
+              <label class="form-control">
+                <div class="label py-0.5"><span class="label-text text-xs font-medium">{{ t("adminBookings.customerName") }}</span></div>
                 <input v-model="form.customer_name" class="input input-bordered input-sm w-full" />
-              </div>
-              <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-medium text-gray-700">{{ t("adminBookings.customerPhone") }}</label>
+              </label>
+              <label class="form-control">
+                <div class="label py-0.5"><span class="label-text text-xs font-medium">{{ t("adminBookings.customerPhone") }}</span></div>
                 <input v-model="form.customer_phone" class="input input-bordered input-sm w-full" />
-              </div>
-              <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-medium text-gray-700">{{ t("adminBookings.customerIdType") }}</label>
+              </label>
+              <label class="form-control">
+                <div class="label py-0.5"><span class="label-text text-xs font-medium">{{ t("adminBookings.customerIdType") }}</span></div>
                 <input v-model="form.customer_id_type" class="input input-bordered input-sm w-full" />
-              </div>
-              <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-medium text-gray-700">{{ t("adminBookings.customerIdNumber") }}</label>
+              </label>
+              <label class="form-control">
+                <div class="label py-0.5"><span class="label-text text-xs font-medium">{{ t("adminBookings.customerIdNumber") }}</span></div>
                 <input v-model="form.customer_id_number" class="input input-bordered input-sm w-full" />
-              </div>
+              </label>
             </div>
           </div>
 
@@ -1021,14 +1030,14 @@ function openDetailFromPanel(id: string) {
         </form>
 
         <!-- Footer -->
-        <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
+        <div class="modal-action mt-4 pt-4 border-t border-base-200">
           <form method="dialog">
             <button class="btn btn-sm btn-outline">{{ t("adminBookings.cancel") }}</button>
           </form>
           <button
             type="submit"
             form="booking-form"
-            class="btn btn-sm bg-gray-900 text-white hover:bg-gray-700 border-none"
+            class="btn btn-sm btn-neutral"
             :class="isPending ? 'loading' : ''"
             :disabled="isPending"
           >
@@ -1043,30 +1052,32 @@ function openDetailFromPanel(id: string) {
     <dialog ref="statDialogEl" class="modal" @close="statPanel.visible = false">
       <div class="modal-box w-full max-w-md max-h-[80vh] flex flex-col">
         <div class="flex items-center justify-between mb-4">
-          <h3 class="font-semibold text-gray-900">{{ statPanelTitle }}</h3>
+          <h3 class="font-semibold">{{ statPanelTitle }}</h3>
           <form method="dialog">
             <button class="btn btn-sm btn-circle btn-ghost">✕</button>
           </form>
         </div>
         <div class="overflow-y-auto flex-1">
-          <div v-if="statPanelBookings.length === 0" class="py-8 text-center text-sm text-gray-400">
+          <div v-if="statPanelBookings.length === 0" class="py-8 text-center text-sm text-base-content/40">
             {{ t("adminBookings.noBookings") }}
           </div>
           <div v-else class="flex flex-col gap-2">
             <button
               v-for="b in statPanelBookings"
               :key="b.id"
-              class="w-full text-left rounded-lg border border-gray-100 px-4 py-3 hover:bg-gray-50 transition-colors"
+              class="w-full text-left card card-compact card-bordered hover:bg-base-200 transition-colors"
               @click="openDetailFromPanel(b.id)"
             >
-              <div class="flex items-center justify-between gap-2">
-                <span class="font-mono text-xs font-semibold text-gray-500 bg-gray-100 rounded px-1.5 py-0.5">{{ b.booking_ref }}</span>
-                <span :class="['badge badge-sm', b.payment_status === 'paid' ? 'badge-success' : 'badge-warning']">
-                  {{ b.payment_status === 'paid' ? t('adminBookings.paid') : t('adminBookings.unpaid') }}
-                </span>
+              <div class="card-body">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="font-mono text-xs font-semibold badge badge-ghost">{{ b.booking_ref }}</span>
+                  <span :class="['badge badge-sm', b.payment_status === 'paid' ? 'badge-success' : 'badge-warning']">
+                    {{ b.payment_status === 'paid' ? t('adminBookings.paid') : t('adminBookings.unpaid') }}
+                  </span>
+                </div>
+                <p class="text-sm font-medium">{{ b.customer_name || "—" }}</p>
+                <p class="text-xs text-base-content/40">{{ formatDate(b.check_in) }} → {{ formatDate(b.check_out) }}</p>
               </div>
-              <p class="mt-1 text-sm font-medium text-gray-800">{{ b.customer_name || "—" }}</p>
-              <p class="text-xs text-gray-400 mt-0.5">{{ formatDate(b.check_in) }} → {{ formatDate(b.check_out) }}</p>
             </button>
           </div>
         </div>
