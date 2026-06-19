@@ -18,7 +18,7 @@ async fn main() {
 
     tokio::fs::create_dir_all(&config.uploads_dir)
         .await
-        .expect("failed to create uploads directory");
+        .expect("failed to create uploads directory.");
 
     let session_store = PostgresStore::new(pool.clone());
     let session_key = Key::derive_from(config.session_secret.as_bytes());

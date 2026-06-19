@@ -14,12 +14,23 @@ services:
       timeout: 5s
       retries: 10
 
+  seed:
+    image: ${BACKEND_IMAGE}
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+    command: ["sh", "-c", "sqlx migrate run && seed"]
+
   backend:
     image: ${BACKEND_IMAGE}
     env_file: .env
     depends_on:
       db:
         condition: service_healthy
+      seed:
+        condition: service_completed_successfully
     volumes:
       - uploads:/app/uploads
     restart: unless-stopped
