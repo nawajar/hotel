@@ -176,6 +176,7 @@
     "filterAll": "All",
     "filterStatus": "Status",
     "filterStatusAll": "All statuses",
+    "filterPaymentAll": "All payments",
     "filterStatusActive": "Active",
     "filterStatusCancelled": "Cancelled",
     "nights": "nights",

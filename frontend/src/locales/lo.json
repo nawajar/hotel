@@ -176,6 +176,7 @@
     "filterAll": "ທັງໝົດ",
     "filterStatus": "ສະຖານະ",
     "filterStatusAll": "ທຸກສະຖານະ",
+    "filterPaymentAll": "ທຸກການຊຳລະ",
     "filterStatusActive": "ໃຊ້ງານຢູ່",
     "filterStatusCancelled": "ຍົກເລີກ",
     "nights": "ຄືນ",

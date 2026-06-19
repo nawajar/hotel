@@ -30,6 +30,7 @@ const { data: todaySummary } = useTodaySummaryQuery();
 type FilterTab = "today" | "upcoming" | "all";
 const activeTab = ref<FilterTab>("today");
 const statusFilter = ref<"" | "active" | "cancelled">("");
+const paymentFilter = ref<"" | "paid" | "unpaid">("");
 const PAGE_SIZE = 15;
 const currentPage = ref(1);
 
@@ -53,6 +54,10 @@ const filteredBookings = computed(() => {
     list = list.filter((b) => b.status === statusFilter.value);
   }
 
+  if (paymentFilter.value) {
+    list = list.filter((b) => b.payment_status === paymentFilter.value);
+  }
+
   return list;
 });
 
@@ -72,6 +77,11 @@ function onTabChange(tab: FilterTab) {
 
 function onStatusChange(val: "" | "active" | "cancelled") {
   statusFilter.value = val;
+  currentPage.value = 1;
+}
+
+function onPaymentFilterChange(val: "" | "paid" | "unpaid") {
+  paymentFilter.value = val;
   currentPage.value = 1;
 }
 
@@ -525,6 +535,16 @@ function openDetailFromPanel(id: string) {
             <option value="">{{ t("adminBookings.filterStatusAll") }}</option>
             <option value="active">{{ t("adminBookings.filterStatusActive") }}</option>
             <option value="cancelled">{{ t("adminBookings.filterStatusCancelled") }}</option>
+          </select>
+
+          <select
+            :value="paymentFilter"
+            class="select select-bordered select-sm"
+            @change="onPaymentFilterChange(($event.target as HTMLSelectElement).value as '' | 'paid' | 'unpaid')"
+          >
+            <option value="">{{ t("adminBookings.filterPaymentAll") }}</option>
+            <option value="paid">{{ t("adminBookings.paymentPaid") }}</option>
+            <option value="unpaid">{{ t("adminBookings.paymentUnpaid") }}</option>
           </select>
 
           <span class="ml-auto text-xs text-base-content/50">
