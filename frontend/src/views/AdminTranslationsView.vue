@@ -32,6 +32,16 @@ const overridesMap = computed(() => {
   return map;
 });
 
+const groupedKeys = computed(() => {
+  const groups = new Map<string, string[]>();
+  for (const key of allKeys) {
+    const group = key.split(".")[0];
+    if (!groups.has(group)) groups.set(group, []);
+    groups.get(group)!.push(key);
+  }
+  return groups;
+});
+
 const drafts = reactive<Record<string, string>>({});
 const savingField = ref<string | null>(null);
 const savedField = ref<string | null>(null);
@@ -92,57 +102,82 @@ async function reset(key: string, locale: Locale) {
       <p class="mt-2 text-sm text-gray-600">{{ t("adminTranslations.description") }}</p>
 
       <div v-if="isLoading" class="mt-6 text-sm text-gray-500">…</div>
-      <div v-else class="mt-6 divide-y divide-gray-100">
-        <div class="pb-2 grid grid-cols-[12rem_1fr_1fr] gap-4 text-xs font-medium text-gray-500 uppercase tracking-wide">
-          <div>{{ t("adminTranslations.key") }}</div>
-          <div>{{ t("adminTranslations.english") }}</div>
-          <div>{{ t("adminTranslations.lao") }}</div>
-        </div>
-        <div v-for="key in allKeys" :key="key" class="py-3 grid grid-cols-[12rem_1fr_1fr] gap-4 items-start">
-          <div class="font-mono text-xs text-gray-500 pt-2">{{ key }}</div>
+      <div v-else class="mt-6 flex flex-col gap-6">
 
-          <div>
-            <div class="flex items-center gap-2">
-              <input
-                :value="valueFor(key, 'en')"
-                class="input input-bordered input-xs w-full"
-                @input="onInput(key, 'en', ($event.target as HTMLInputElement).value)"
-              />
-              <button
-                class="btn btn-xs bg-gray-900 text-white hover:bg-gray-700 border-none whitespace-nowrap"
-                :class="savingField === fieldKey(key, 'en') ? 'loading' : ''"
-                :disabled="savingField === fieldKey(key, 'en')"
-                @click="save(key, 'en')"
-              >{{ t("adminTranslations.save") }}</button>
-            </div>
-            <span v-if="savedField === fieldKey(key, 'en')" class="mt-1 inline-block text-xs text-green-600">{{ t("adminTranslations.saved") }}</span>
-            <button v-else-if="isOverridden(key, 'en')" class="mt-1 text-xs text-gray-400 hover:text-gray-600 underline" @click="reset(key, 'en')">
-              {{ t("adminTranslations.reset") }}
-            </button>
-            <span v-else class="mt-1 inline-block text-xs text-gray-400">{{ t("adminTranslations.default") }}</span>
+        <div
+          v-for="[group, keys] in groupedKeys"
+          :key="group"
+          class="rounded-lg border border-gray-200 overflow-hidden"
+        >
+          <!-- Group header -->
+          <div class="bg-gray-50 border-b border-gray-200 px-4 py-2 flex items-center gap-2">
+            <span class="font-mono text-xs font-semibold text-gray-700">{{ group }}</span>
+            <span class="text-xs text-gray-400">{{ keys.length }}</span>
           </div>
 
-          <div>
-            <div class="flex items-center gap-2">
-              <input
-                :value="valueFor(key, 'lo')"
-                class="input input-bordered input-xs w-full"
-                @input="onInput(key, 'lo', ($event.target as HTMLInputElement).value)"
-              />
-              <button
-                class="btn btn-xs bg-gray-900 text-white hover:bg-gray-700 border-none whitespace-nowrap"
-                :class="savingField === fieldKey(key, 'lo') ? 'loading' : ''"
-                :disabled="savingField === fieldKey(key, 'lo')"
-                @click="save(key, 'lo')"
-              >{{ t("adminTranslations.save") }}</button>
+          <!-- Column headers -->
+          <div class="grid grid-cols-[10rem_1fr_1fr] gap-4 px-4 py-2 border-b border-gray-100 text-xs font-medium text-gray-400 uppercase tracking-wide">
+            <div>{{ t("adminTranslations.key") }}</div>
+            <div>{{ t("adminTranslations.english") }}</div>
+            <div>{{ t("adminTranslations.lao") }}</div>
+          </div>
+
+          <!-- Rows -->
+          <div
+            v-for="key in keys"
+            :key="key"
+            class="grid grid-cols-[10rem_1fr_1fr] gap-4 px-4 py-3 border-b border-gray-50 last:border-b-0 items-start hover:bg-gray-50/50"
+          >
+            <div class="font-mono text-xs text-gray-500 pt-2 truncate" :title="key">
+              {{ key.split(".").slice(1).join(".") }}
             </div>
-            <span v-if="savedField === fieldKey(key, 'lo')" class="mt-1 inline-block text-xs text-green-600">{{ t("adminTranslations.saved") }}</span>
-            <button v-else-if="isOverridden(key, 'lo')" class="mt-1 text-xs text-gray-400 hover:text-gray-600 underline" @click="reset(key, 'lo')">
-              {{ t("adminTranslations.reset") }}
-            </button>
-            <span v-else class="mt-1 inline-block text-xs text-gray-400">{{ t("adminTranslations.default") }}</span>
+
+            <!-- English -->
+            <div>
+              <div class="flex items-center gap-2">
+                <input
+                  :value="valueFor(key, 'en')"
+                  class="input input-bordered input-sm w-full text-sm"
+                  @input="onInput(key, 'en', ($event.target as HTMLInputElement).value)"
+                />
+                <button
+                  class="btn btn-sm bg-gray-900 text-white hover:bg-gray-700 border-none whitespace-nowrap"
+                  :class="savingField === fieldKey(key, 'en') ? 'loading' : ''"
+                  :disabled="savingField === fieldKey(key, 'en')"
+                  @click="save(key, 'en')"
+                >{{ t("adminTranslations.save") }}</button>
+              </div>
+              <span v-if="savedField === fieldKey(key, 'en')" class="mt-1 inline-block text-xs text-green-600">{{ t("adminTranslations.saved") }}</span>
+              <button v-else-if="isOverridden(key, 'en')" class="mt-1 text-xs text-gray-400 hover:text-gray-600 underline" @click="reset(key, 'en')">
+                {{ t("adminTranslations.reset") }}
+              </button>
+              <span v-else class="mt-1 inline-block text-xs text-gray-400">{{ t("adminTranslations.default") }}</span>
+            </div>
+
+            <!-- Lao -->
+            <div>
+              <div class="flex items-center gap-2">
+                <input
+                  :value="valueFor(key, 'lo')"
+                  class="input input-bordered input-sm w-full text-sm"
+                  @input="onInput(key, 'lo', ($event.target as HTMLInputElement).value)"
+                />
+                <button
+                  class="btn btn-sm bg-gray-900 text-white hover:bg-gray-700 border-none whitespace-nowrap"
+                  :class="savingField === fieldKey(key, 'lo') ? 'loading' : ''"
+                  :disabled="savingField === fieldKey(key, 'lo')"
+                  @click="save(key, 'lo')"
+                >{{ t("adminTranslations.save") }}</button>
+              </div>
+              <span v-if="savedField === fieldKey(key, 'lo')" class="mt-1 inline-block text-xs text-green-600">{{ t("adminTranslations.saved") }}</span>
+              <button v-else-if="isOverridden(key, 'lo')" class="mt-1 text-xs text-gray-400 hover:text-gray-600 underline" @click="reset(key, 'lo')">
+                {{ t("adminTranslations.reset") }}
+              </button>
+              <span v-else class="mt-1 inline-block text-xs text-gray-400">{{ t("adminTranslations.default") }}</span>
+            </div>
           </div>
         </div>
+
       </div>
     </div>
   </AppShell>
