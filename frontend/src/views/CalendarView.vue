@@ -106,6 +106,7 @@ const calendarOptions = computed<CalendarOptions>(() => ({
   eventClick: handleEventClick,
   datesSet: handleDatesSet,
   height: "auto",
+  displayEventTime: false,
   resourceAreaHeaderContent: t("calendar.rooms"),
 }));
 

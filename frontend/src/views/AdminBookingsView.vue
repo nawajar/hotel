@@ -194,6 +194,7 @@ const minCheckOut = computed<Date | undefined>(() => {
   return d;
 });
 
+
 const { data: roomAvailability, isLoading: availabilityLoading } = useRoomAvailabilityQuery(
   availabilityCheckIn,
   availabilityCheckOut,
@@ -848,15 +849,12 @@ function openDetailFromPanel(id: string) {
               <VueDatePicker
                 v-model="form.check_in"
                 model-type="yyyy-MM-dd"
-                format="dd MMM yyyy"
-                :enable-time-picker="false"
-                auto-apply
-                :clearable="false"
+                :time-config="{ enableTimePicker: false }"
                 :min-date="editingBooking ? undefined : todayForPicker"
                 :max-date="form.check_out ? new Date(form.check_out) : undefined"
-                week-start="1"
                 :teleport="formDialogEl ?? true"
-                input-class-name="dp-hotel-input"
+                input-class-name="input input-bordered input-sm w-full"
+                auto-apply
               />
             </div>
             <div class="flex flex-col gap-1.5">
@@ -866,14 +864,11 @@ function openDetailFromPanel(id: string) {
               <VueDatePicker
                 v-model="form.check_out"
                 model-type="yyyy-MM-dd"
-                format="dd MMM yyyy"
-                :enable-time-picker="false"
-                auto-apply
-                :clearable="false"
+                :time-config="{ enableTimePicker: false }"
                 :min-date="minCheckOut ?? (editingBooking ? undefined : todayForPicker)"
-                week-start="1"
                 :teleport="formDialogEl ?? true"
-                input-class-name="dp-hotel-input"
+                input-class-name="input input-bordered input-sm w-full"
+                auto-apply
               />
             </div>
           </div>
@@ -1081,33 +1076,3 @@ function openDetailFromPanel(id: string) {
   </AppShell>
 </template>
 
-<style>
-:root {
-  --dp-primary-color: #111827;
-  --dp-primary-text-color: #ffffff;
-  --dp-border-radius: 0.375rem;
-  --dp-cell-border-radius: 0.25rem;
-  --dp-font-size: 0.875rem;
-  --dp-font-family: inherit;
-  --dp-border-color: #d1d5db;
-  --dp-hover-color: #f3f4f6;
-  --dp-hover-text-color: #111827;
-  --dp-menu-min-width: 260px;
-}
-
-.dp-hotel-input {
-  width: 100%;
-  border-radius: 0.375rem;
-  border: 1px solid #d1d5db;
-  padding: 0.5rem 0.75rem;
-  font-size: 0.875rem;
-  line-height: 1.25rem;
-  outline: none;
-  background: white;
-  color: #111827;
-}
-
-.dp-hotel-input:focus {
-  border-color: #9ca3af;
-}
-</style>
