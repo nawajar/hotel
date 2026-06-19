@@ -855,7 +855,7 @@ function openDetailFromPanel(id: string) {
                 :min-date="editingBooking ? undefined : todayForPicker"
                 :max-date="form.check_out ? new Date(form.check_out) : undefined"
                 week-start="1"
-                :teleport="true"
+                :teleport="formDialogEl ?? true"
                 input-class-name="dp-hotel-input"
               />
             </div>
@@ -872,7 +872,7 @@ function openDetailFromPanel(id: string) {
                 :clearable="false"
                 :min-date="minCheckOut ?? (editingBooking ? undefined : todayForPicker)"
                 week-start="1"
-                :teleport="true"
+                :teleport="formDialogEl ?? true"
                 input-class-name="dp-hotel-input"
               />
             </div>
