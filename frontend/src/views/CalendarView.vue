@@ -333,6 +333,10 @@ const legendEntries = computed(() => [
             <span class="text-gray-500 w-28 shrink-0">{{ t("calendar.note") }}</span>
             <span>{{ selectedBooking.note }}</span>
           </div>
+          <div class="flex gap-2">
+            <span class="text-gray-500 w-28 shrink-0">{{ t("calendar.createdAt") }}</span>
+            <span>{{ new Date(selectedBooking.created_at).toLocaleString() }}</span>
+          </div>
           <!-- Rooms -->
           <div v-if="selectedBooking.rooms.length > 0" class="flex gap-2">
             <span class="text-gray-500 w-28 shrink-0">{{ t("calendar.rooms") }}</span>

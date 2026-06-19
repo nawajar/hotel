@@ -3,10 +3,27 @@ import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { useAuthStore } from "@/stores/auth";
 import { setLocale, type Locale } from "@/i18n";
+import { ref, onMounted, onUnmounted } from "vue";
 
 const router = useRouter();
 const { t, locale } = useI18n();
 const authStore = useAuthStore();
+
+const currentTime = ref("");
+let clockTimer: ReturnType<typeof setInterval>;
+
+function updateClock() {
+  currentTime.value = new Date().toLocaleTimeString();
+}
+
+onMounted(() => {
+  updateClock();
+  clockTimer = setInterval(updateClock, 1000);
+});
+
+onUnmounted(() => {
+  clearInterval(clockTimer);
+});
 
 function handleLocaleChange(event: Event) {
   setLocale((event.target as HTMLSelectElement).value as Locale);
@@ -87,6 +104,7 @@ async function handleLogout() {
           </router-link>
         </div>
         <div class="flex items-center gap-4">
+          <span class="text-sm text-gray-600 font-mono">{{ currentTime }}</span>
           <select
             :value="locale"
             class="text-sm border border-gray-300 rounded-md px-2 py-1 text-gray-700"

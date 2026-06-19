@@ -180,6 +180,7 @@
     "filterStatusCancelled": "Cancelled",
     "nights": "nights",
     "createdBy": "Created by",
+    "createdAt": "Created at",
     "lastEditedBy": "Last edited by",
     "closeDetail": "Close",
     "prevPage": "Previous",
@@ -212,6 +213,7 @@
     "paymentStatus": "Payment",
     "label": "Label",
     "note": "Note",
+    "createdAt": "Created at",
     "legend": {
       "needsAttention": "Needs Attention",
       "checkIn": "Check-in",

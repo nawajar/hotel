@@ -180,6 +180,7 @@
     "filterStatusCancelled": "ຍົກເລີກ",
     "nights": "ຄືນ",
     "createdBy": "ສ້າງໂດຍ",
+    "createdAt": "ສ້າງເມື່ອ",
     "lastEditedBy": "ແກ້ໄຂຄັ້ງສຸດທ້າຍໂດຍ",
     "closeDetail": "ປິດ",
     "prevPage": "ກ່ອນໜ້າ",
@@ -212,6 +213,7 @@
     "paymentStatus": "ການຊຳລະ",
     "label": "ປ້າຍ",
     "note": "ໝາຍເຫດ",
+    "createdAt": "ສ້າງເມື່ອ",
     "legend": {
       "needsAttention": "ຕ້ອງການຄວາມເອົາໃຈໃສ່",
       "checkIn": "ເຊັກອິນ",
