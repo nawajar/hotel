@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "delete from booking_extra_services where id = $1 and booking_id = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "bfc80cadff4cbbe28064502c5c0b0069f3e1419d7591f218e03df9e1ed82a7b9"
+}

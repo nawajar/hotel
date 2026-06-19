@@ -1,0 +1,72 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "update booking_rooms\n               set status     = 'cancelled',\n                   updated_by = $3,\n                   updated_at = now()\n               where id = $1 and booking_id = $2\n               returning id, booking_id, room_id, room_number, room_name,\n                         price_snapshot, status, updated_at, updated_by",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "booking_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "room_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "room_number",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "room_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "price_snapshot",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 6,
+        "name": "status",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "updated_by",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "4568fa20d3ebfa73c3ceb1a9df9723f430b007b6d68d84bd08207cb9756a977e"
+}

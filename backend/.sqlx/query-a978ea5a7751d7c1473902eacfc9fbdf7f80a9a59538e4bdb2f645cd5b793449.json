@@ -1,0 +1,25 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select distinct br.room_number\n               from booking_rooms br\n               join bookings b on b.id = br.booking_id\n               where br.room_id = any($1)\n                 and br.status = 'active'\n                 and b.status  = 'active'\n                 and b.check_in  < $3\n                 and b.check_out > $2\n                 and b.id != $4\n               order by br.room_number",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "room_number",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "UuidArray",
+        "Timestamptz",
+        "Timestamptz",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "a978ea5a7751d7c1473902eacfc9fbdf7f80a9a59538e4bdb2f645cd5b793449"
+}

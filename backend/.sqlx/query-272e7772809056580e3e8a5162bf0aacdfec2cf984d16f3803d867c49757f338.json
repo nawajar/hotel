@@ -1,0 +1,53 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "with room_totals as (\n                     select br.booking_id, sum(br.price_snapshot) as room_rev\n                     from booking_rooms br where br.status='active' group by br.booking_id\n                   ),\n                   extra_totals as (\n                     select bes.booking_id, sum(bes.amount) as extra_rev\n                     from booking_extra_services bes group by bes.booking_id\n                   ),\n                   booking_totals as (\n                     select b.id, b.paid_at, b.discount_type, b.discount_value,\n                            coalesce(rt.room_rev,0) as room_rev, coalesce(et.extra_rev,0) as extra_rev\n                     from bookings b\n                     left join room_totals rt on rt.booking_id=b.id\n                     left join extra_totals et on et.booking_id=b.id\n                     where b.status='active' and b.paid_at is not null\n                       and extract(year from b.paid_at)=$1\n                       and extract(month from b.paid_at)=$2\n                   )\n                   select\n                     to_char(paid_at,'YYYY-MM-DD') as \"period!\",\n                     count(*)::int8 as \"booking_count!\",\n                     coalesce(sum(room_rev),0)::float8 as \"room_revenue!\",\n                     coalesce(sum(extra_rev),0)::float8 as \"extra_revenue!\",\n                     coalesce(sum(\n                       case discount_type\n                         when 'amount' then least(discount_value, room_rev+extra_rev)\n                         when 'percentage' then (room_rev+extra_rev)*discount_value/100.0\n                         else 0 end\n                     ),0)::float8 as \"discount_total!\",\n                     coalesce(sum(\n                       (room_rev+extra_rev) -\n                       case discount_type\n                         when 'amount' then least(discount_value, room_rev+extra_rev)\n                         when 'percentage' then (room_rev+extra_rev)*discount_value/100.0\n                         else 0 end\n                     ),0)::float8 as \"net_revenue!\"\n                   from booking_totals\n                   group by to_char(paid_at,'YYYY-MM-DD')\n                   order by \"period!\" asc",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "period!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "booking_count!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "room_revenue!",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 3,
+        "name": "extra_revenue!",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 4,
+        "name": "discount_total!",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 5,
+        "name": "net_revenue!",
+        "type_info": "Float8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Numeric",
+        "Numeric"
+      ]
+    },
+    "nullable": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "272e7772809056580e3e8a5162bf0aacdfec2cf984d16f3803d867c49757f338"
+}

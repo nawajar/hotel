@@ -1,0 +1,89 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select b.id, b.booking_ref, b.status, b.payment_status, b.label,\n                      b.check_in, b.check_out, b.customer_name, b.note,\n                      br.room_id as \"room_id?\", br.room_number as \"room_number?\", br.room_name as \"room_name?\"\n               from bookings b\n               left join booking_rooms br on br.booking_id = b.id and br.status = 'active'\n               where b.status = 'active' and b.check_in <= $2 and b.check_out >= $1\n               order by b.check_in asc, b.id asc, br.room_number asc",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "booking_ref",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "status",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "payment_status",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "label",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "check_in",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 6,
+        "name": "check_out",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "customer_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "note",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "room_id?",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 10,
+        "name": "room_number?",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 11,
+        "name": "room_name?",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "ed91bba458d037ffc4bcc097ef5e8c4a4df8baff9fcb18b43c2add01ab5c1f39"
+}

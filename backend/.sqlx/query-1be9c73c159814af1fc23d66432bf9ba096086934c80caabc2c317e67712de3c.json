@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "update booking_rooms set status = 'cancelled', updated_by = $2, updated_at = now() where booking_id = $1 and status = 'active'",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "1be9c73c159814af1fc23d66432bf9ba096086934c80caabc2c317e67712de3c"
+}

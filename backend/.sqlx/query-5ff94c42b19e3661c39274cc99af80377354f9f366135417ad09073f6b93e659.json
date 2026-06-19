@@ -1,0 +1,20 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select count(*) from rooms r where r.is_active = true\n               and not exists (\n                   select 1 from booking_rooms br\n                   join bookings b on b.id = br.booking_id\n                   where br.room_id = r.id\n                     and br.status = 'active'\n                     and b.status  = 'active'\n                     and b.check_in::date  <= current_date\n                     and b.check_out::date > current_date\n               )",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "count",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "5ff94c42b19e3661c39274cc99af80377354f9f366135417ad09073f6b93e659"
+}

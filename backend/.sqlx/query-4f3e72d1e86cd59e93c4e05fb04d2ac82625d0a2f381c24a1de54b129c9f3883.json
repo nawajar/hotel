@@ -1,0 +1,70 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select id, booking_id, room_id, room_number, room_name,\n                      price_snapshot, status, updated_at, updated_by\n               from booking_rooms\n               where booking_id = $1\n               order by id asc",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "booking_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "room_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "room_number",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "room_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "price_snapshot",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 6,
+        "name": "status",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "updated_by",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "4f3e72d1e86cd59e93c4e05fb04d2ac82625d0a2f381c24a1de54b129c9f3883"
+}

@@ -1,0 +1,47 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select r.id, r.room_number, r.room_name, r.price,\n               case when exists (\n                   select 1 from booking_rooms br\n                   join bookings b on b.id = br.booking_id\n                   where br.room_id = r.id\n                     and br.status = 'active'\n                     and b.status  = 'active'\n                     and b.check_in  < $2\n                     and b.check_out > $1\n               ) then false else true end as \"is_available!: bool\"\n               from rooms r\n               where r.is_active = true\n               order by r.room_number",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "room_number",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "room_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "price",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 4,
+        "name": "is_available!: bool",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      null
+    ]
+  },
+  "hash": "b4698a349ff869aac46bdf7300655fe352ad4f652867945fcfd1c71f80716ca8"
+}

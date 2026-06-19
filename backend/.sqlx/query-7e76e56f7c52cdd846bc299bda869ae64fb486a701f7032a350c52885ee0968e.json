@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "insert into rooms (room_number, room_name, room_description, is_active, price, updated_by)\n               values ($1, $2, $3, true, $4, $5)\n               on conflict (room_number) do nothing",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Text",
+        "Float8",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "7e76e56f7c52cdd846bc299bda869ae64fb486a701f7032a350c52885ee0968e"
+}

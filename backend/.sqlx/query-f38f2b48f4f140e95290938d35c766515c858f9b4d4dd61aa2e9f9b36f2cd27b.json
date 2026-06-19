@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select room_id from booking_rooms where booking_id = $1 and status = 'active'",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "room_id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "f38f2b48f4f140e95290938d35c766515c858f9b4d4dd61aa2e9f9b36f2cd27b"
+}

@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "delete from booking_documents where id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "8af572aa7b18f8659571677c486053fc3d5ebb642f6d9c6ec9ff27a6c9bab0f7"
+}

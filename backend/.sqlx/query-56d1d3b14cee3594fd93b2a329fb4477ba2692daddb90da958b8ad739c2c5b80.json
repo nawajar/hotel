@@ -1,0 +1,56 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select n.id, n.user_id, n.body, n.done,\n                      u.name as created_by_name,\n                      n.created_at, n.updated_at\n               from notes n\n               join users u on u.id = n.user_id\n               order by n.done asc, n.created_at desc",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "body",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "done",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 4,
+        "name": "created_by_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 6,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "56d1d3b14cee3594fd93b2a329fb4477ba2692daddb90da958b8ad739c2c5b80"
+}
