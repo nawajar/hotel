@@ -16,7 +16,7 @@ use crate::{
     error::AppError,
     models::booking::{
         Booking, BookingDetail, BookingDocument, BookingExtraService, BookingRoom,
-        IncomeSummaryRow, RoomAvailability, TodaySummary,
+        IncomeDetailRow, IncomeSummaryRow, RoomAvailability, TodaySummary,
     },
     AppState,
 };
@@ -343,6 +343,22 @@ async fn income_summary(
     ))
 }
 
+#[derive(Debug, Deserialize)]
+struct IncomeDetailParams {
+    year: i32,
+    month: i32,
+}
+
+async fn income_detail(
+    RequireAdmin(_user): RequireAdmin,
+    State(state): State<AppState>,
+    Query(params): Query<IncomeDetailParams>,
+) -> Result<Json<Vec<IncomeDetailRow>>, AppError> {
+    Ok(Json(
+        Booking::income_detail(&state.pool, params.year, params.month).await?,
+    ))
+}
+
 async fn room_availability(
     AuthUser(_user): AuthUser,
     State(state): State<AppState>,
@@ -486,6 +502,7 @@ async fn delete_document(
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/income-summary", get(income_summary))
+        .route("/income-detail", get(income_detail))
         .route("/room-availability", get(room_availability))
         .route("/today-summary", get(today_summary))
         .route("/", get(list_bookings).post(create_booking))

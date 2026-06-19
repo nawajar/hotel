@@ -6,6 +6,7 @@ import {
   type UpdateBookingInput,
   type AddExtraServiceInput,
 } from "@/api/bookings";
+export { type IncomeDetailRow } from "@/api/bookings";
 
 export function useUploadDocumentMutation() {
   const queryClient = useQueryClient();
@@ -156,5 +157,17 @@ export function useIncomeSummaryQuery(
   return useQuery({
     queryKey: computed(() => ["income-summary", year.value, month.value]),
     queryFn: () => bookingsApi.getIncomeSummary(year.value, month.value),
+  });
+}
+
+export function useIncomeDetailQuery(
+  year: Ref<number>,
+  month: Ref<number>,
+  enabled: Ref<boolean>,
+) {
+  return useQuery({
+    queryKey: computed(() => ["income-detail", year.value, month.value]),
+    queryFn: () => bookingsApi.getIncomeDetail(year.value, month.value),
+    enabled,
   });
 }

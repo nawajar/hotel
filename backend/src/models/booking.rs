@@ -132,6 +132,17 @@ pub struct IncomeSummaryRow {
     pub net_revenue: f64,
 }
 
+#[derive(Debug, Clone, Serialize)]
+pub struct IncomeDetailRow {
+    pub booking_ref: String,
+    pub customer_name: Option<String>,
+    pub paid_date: String,
+    pub room_revenue: f64,
+    pub extra_revenue: f64,
+    pub discount_total: f64,
+    pub net_revenue: f64,
+}
+
 impl Booking {
     pub async fn calendar_list(
         pool: &PgPool,
@@ -331,10 +342,12 @@ impl Booking {
         let booking_id = sqlx::query_scalar!(
             r#"insert into bookings
                    (booking_ref, check_in, check_out, label, note,
-                    discount_type, discount_value, payment_status,
+                    discount_type, discount_value, payment_status, paid_at,
                     customer_name, customer_phone, customer_id_type, customer_id_number,
                     created_by, updated_by)
-               values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $13)
+               values ($1, $2, $3, $4, $5, $6, $7, $8,
+                       case when $8 = 'paid' then now() else null end,
+                       $9, $10, $11, $12, $13, $13)
                returning id"#,
             booking_ref,
             check_in,
@@ -409,6 +422,7 @@ impl Booking {
                    discount_type   = $6,
                    discount_value  = $7,
                    payment_status  = $8,
+                   paid_at         = case when $8 = 'paid' then coalesce(paid_at, now()) else null end,
                    customer_name   = $9,
                    customer_phone  = $10,
                    customer_id_type    = $11,
@@ -550,34 +564,35 @@ impl Booking {
                      from booking_extra_services bes group by bes.booking_id
                    ),
                    booking_totals as (
-                     select b.id, b.check_in, b.payment_status, b.discount_type, b.discount_value,
+                     select b.id, b.paid_at, b.discount_type, b.discount_value,
                             coalesce(rt.room_rev,0) as room_rev, coalesce(et.extra_rev,0) as extra_rev
                      from bookings b
                      left join room_totals rt on rt.booking_id=b.id
                      left join extra_totals et on et.booking_id=b.id
-                     where b.status='active' and extract(year from b.check_in)=$1
-                       and extract(month from b.check_in)=$2
+                     where b.status='active' and b.paid_at is not null
+                       and extract(year from b.paid_at)=$1
+                       and extract(month from b.paid_at)=$2
                    )
                    select
-                     to_char(check_in,'YYYY-MM-DD') as "period!",
+                     to_char(paid_at,'YYYY-MM-DD') as "period!",
                      count(*)::int8 as "booking_count!",
-                     coalesce(sum(case when payment_status='paid' then room_rev else 0 end),0)::float8 as "room_revenue!",
-                     coalesce(sum(case when payment_status='paid' then extra_rev else 0 end),0)::float8 as "extra_revenue!",
-                     coalesce(sum(case when payment_status='paid' then
-                        case discount_type
-                          when 'amount' then least(discount_value, room_rev+extra_rev)
-                          when 'percentage' then (room_rev+extra_rev)*discount_value/100.0
-                          else 0 end
-                      else 0 end),0)::float8 as "discount_total!",
-                     coalesce(sum(case when payment_status='paid' then
-                        (room_rev+extra_rev) -
-                        case discount_type
-                          when 'amount' then least(discount_value, room_rev+extra_rev)
-                          when 'percentage' then (room_rev+extra_rev)*discount_value/100.0
-                          else 0 end
-                      else 0 end),0)::float8 as "net_revenue!"
+                     coalesce(sum(room_rev),0)::float8 as "room_revenue!",
+                     coalesce(sum(extra_rev),0)::float8 as "extra_revenue!",
+                     coalesce(sum(
+                       case discount_type
+                         when 'amount' then least(discount_value, room_rev+extra_rev)
+                         when 'percentage' then (room_rev+extra_rev)*discount_value/100.0
+                         else 0 end
+                     ),0)::float8 as "discount_total!",
+                     coalesce(sum(
+                       (room_rev+extra_rev) -
+                       case discount_type
+                         when 'amount' then least(discount_value, room_rev+extra_rev)
+                         when 'percentage' then (room_rev+extra_rev)*discount_value/100.0
+                         else 0 end
+                     ),0)::float8 as "net_revenue!"
                    from booking_totals
-                   group by to_char(check_in,'YYYY-MM-DD')
+                   group by to_char(paid_at,'YYYY-MM-DD')
                    order by "period!" asc"#,
                 year as i64,
                 month as i64
@@ -607,33 +622,34 @@ impl Booking {
                      from booking_extra_services bes group by bes.booking_id
                    ),
                    booking_totals as (
-                     select b.id, b.check_in, b.payment_status, b.discount_type, b.discount_value,
+                     select b.id, b.paid_at, b.discount_type, b.discount_value,
                             coalesce(rt.room_rev,0) as room_rev, coalesce(et.extra_rev,0) as extra_rev
                      from bookings b
                      left join room_totals rt on rt.booking_id=b.id
                      left join extra_totals et on et.booking_id=b.id
-                     where b.status='active' and extract(year from b.check_in)=$1
+                     where b.status='active' and b.paid_at is not null
+                       and extract(year from b.paid_at)=$1
                    )
                    select
-                     to_char(check_in,'YYYY-MM') as "period!",
+                     to_char(paid_at,'YYYY-MM') as "period!",
                      count(*)::int8 as "booking_count!",
-                     coalesce(sum(case when payment_status='paid' then room_rev else 0 end),0)::float8 as "room_revenue!",
-                     coalesce(sum(case when payment_status='paid' then extra_rev else 0 end),0)::float8 as "extra_revenue!",
-                     coalesce(sum(case when payment_status='paid' then
-                        case discount_type
-                          when 'amount' then least(discount_value, room_rev+extra_rev)
-                          when 'percentage' then (room_rev+extra_rev)*discount_value/100.0
-                          else 0 end
-                      else 0 end),0)::float8 as "discount_total!",
-                     coalesce(sum(case when payment_status='paid' then
-                        (room_rev+extra_rev) -
-                        case discount_type
-                          when 'amount' then least(discount_value, room_rev+extra_rev)
-                          when 'percentage' then (room_rev+extra_rev)*discount_value/100.0
-                          else 0 end
-                      else 0 end),0)::float8 as "net_revenue!"
+                     coalesce(sum(room_rev),0)::float8 as "room_revenue!",
+                     coalesce(sum(extra_rev),0)::float8 as "extra_revenue!",
+                     coalesce(sum(
+                       case discount_type
+                         when 'amount' then least(discount_value, room_rev+extra_rev)
+                         when 'percentage' then (room_rev+extra_rev)*discount_value/100.0
+                         else 0 end
+                     ),0)::float8 as "discount_total!",
+                     coalesce(sum(
+                       (room_rev+extra_rev) -
+                       case discount_type
+                         when 'amount' then least(discount_value, room_rev+extra_rev)
+                         when 'percentage' then (room_rev+extra_rev)*discount_value/100.0
+                         else 0 end
+                     ),0)::float8 as "net_revenue!"
                    from booking_totals
-                   group by to_char(check_in,'YYYY-MM')
+                   group by to_char(paid_at,'YYYY-MM')
                    order by "period!" asc"#,
                 year as i64
             )
@@ -652,6 +668,66 @@ impl Booking {
                 })
                 .collect())
         }
+    }
+
+    pub async fn income_detail(
+        pool: &PgPool,
+        year: i32,
+        month: i32,
+    ) -> Result<Vec<IncomeDetailRow>, sqlx::Error> {
+        let rows = sqlx::query!(
+            r#"with room_totals as (
+                 select br.booking_id, sum(br.price_snapshot) as room_rev
+                 from booking_rooms br where br.status='active' group by br.booking_id
+               ),
+               extra_totals as (
+                 select bes.booking_id, sum(bes.amount) as extra_rev
+                 from booking_extra_services bes group by bes.booking_id
+               )
+               select
+                 b.booking_ref as "booking_ref!",
+                 b.customer_name,
+                 to_char(b.paid_at,'YYYY-MM-DD') as "paid_date!",
+                 coalesce(rt.room_rev,0)::float8 as "room_revenue!",
+                 coalesce(et.extra_rev,0)::float8 as "extra_revenue!",
+                 coalesce(
+                   case b.discount_type
+                     when 'amount' then least(b.discount_value, coalesce(rt.room_rev,0)+coalesce(et.extra_rev,0))
+                     when 'percentage' then (coalesce(rt.room_rev,0)+coalesce(et.extra_rev,0))*b.discount_value/100.0
+                     else 0 end
+                 ,0)::float8 as "discount_total!",
+                 coalesce(
+                   (coalesce(rt.room_rev,0)+coalesce(et.extra_rev,0)) -
+                   case b.discount_type
+                     when 'amount' then least(b.discount_value, coalesce(rt.room_rev,0)+coalesce(et.extra_rev,0))
+                     when 'percentage' then (coalesce(rt.room_rev,0)+coalesce(et.extra_rev,0))*b.discount_value/100.0
+                     else 0 end
+                 ,0)::float8 as "net_revenue!"
+               from bookings b
+               left join room_totals rt on rt.booking_id=b.id
+               left join extra_totals et on et.booking_id=b.id
+               where b.status='active' and b.paid_at is not null
+                 and extract(year from b.paid_at)=$1
+                 and extract(month from b.paid_at)=$2
+               order by b.paid_at asc, b.booking_ref asc"#,
+            year as i64,
+            month as i64
+        )
+        .fetch_all(pool)
+        .await?;
+
+        Ok(rows
+            .into_iter()
+            .map(|r| IncomeDetailRow {
+                booking_ref: r.booking_ref,
+                customer_name: r.customer_name,
+                paid_date: r.paid_date,
+                room_revenue: r.room_revenue,
+                extra_revenue: r.extra_revenue,
+                discount_total: r.discount_total,
+                net_revenue: r.net_revenue,
+            })
+            .collect())
     }
 
     pub async fn room_availability(
@@ -707,8 +783,8 @@ impl Booking {
                    where br.room_id = r.id
                      and br.status = 'active'
                      and b.status  = 'active'
-                     and b.check_in  <= now()
-                     and b.check_out > now()
+                     and b.check_in::date  <= current_date
+                     and b.check_out::date > current_date
                )"#
         )
         .fetch_one(pool)

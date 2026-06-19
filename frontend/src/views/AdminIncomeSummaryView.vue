@@ -2,13 +2,21 @@
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import AppShell from "@/components/AppShell.vue";
-import { useIncomeSummaryQuery } from "@/composables/useBookingsQueries";
+import { useIncomeSummaryQuery, useIncomeDetailQuery } from "@/composables/useBookingsQueries";
 
 const { t } = useI18n();
 
 const summaryYear = ref(new Date().getFullYear());
 const summaryMonth = ref<number | undefined>(undefined);
+const monthSelected = computed(() => summaryMonth.value !== undefined);
+const summaryMonthForDetail = computed(() => summaryMonth.value ?? 1);
+
 const { data: incomeSummary } = useIncomeSummaryQuery(summaryYear, summaryMonth);
+const { data: incomeDetail } = useIncomeDetailQuery(
+  summaryYear,
+  summaryMonthForDetail,
+  monthSelected,
+);
 
 const summaryMonthOptions = computed(() => [
   { value: undefined, label: t("adminBookings.monthAll") },
@@ -21,6 +29,59 @@ const summaryMonthOptions = computed(() => [
 function formatPrice(price: number) {
   return price.toLocaleString();
 }
+
+async function downloadPdf() {
+  const rows = incomeDetail.value;
+  if (!rows || rows.length === 0) return;
+
+  const { default: jsPDF } = await import("jspdf");
+  const { default: autoTable } = await import("jspdf-autotable");
+
+  const doc = new jsPDF({ orientation: "landscape" });
+
+  const monthLabel = String(summaryMonth.value).padStart(2, "0");
+  const title = `Income Summary — ${summaryYear.value}-${monthLabel}`;
+
+  doc.setFontSize(14);
+  doc.text(title, 14, 16);
+  doc.setFontSize(9);
+  doc.setTextColor(120);
+  doc.text(new Date().toLocaleString(), 14, 22);
+  doc.setTextColor(0);
+
+  const totalRoom = rows.reduce((s, r) => s + r.room_revenue, 0);
+  const totalExtra = rows.reduce((s, r) => s + r.extra_revenue, 0);
+  const totalDiscount = rows.reduce((s, r) => s + r.discount_total, 0);
+  const totalNet = rows.reduce((s, r) => s + r.net_revenue, 0);
+
+  autoTable(doc, {
+    startY: 28,
+    head: [["Date Paid", "Booking Ref", "Customer", "Room Revenue", "Extra", "Discount", "Net Revenue"]],
+    body: [
+      ...rows.map((r) => [
+        r.paid_date,
+        r.booking_ref,
+        r.customer_name ?? "-",
+        r.room_revenue.toLocaleString(),
+        r.extra_revenue.toLocaleString(),
+        r.discount_total.toLocaleString(),
+        r.net_revenue.toLocaleString(),
+      ]),
+      [
+        { content: `Total (${rows.length})`, colSpan: 3, styles: { fontStyle: "bold" } },
+        { content: totalRoom.toLocaleString(), styles: { fontStyle: "bold" } },
+        { content: totalExtra.toLocaleString(), styles: { fontStyle: "bold" } },
+        { content: totalDiscount.toLocaleString(), styles: { fontStyle: "bold" } },
+        { content: totalNet.toLocaleString(), styles: { fontStyle: "bold" } },
+      ],
+    ],
+    styles: { fontSize: 8 },
+    headStyles: { fillColor: [40, 40, 40] },
+    foot: [],
+  });
+
+  doc.save(`income-${summaryYear.value}-${monthLabel}.pdf`);
+}
 </script>
 
 <template>
@@ -30,32 +91,46 @@ function formatPrice(price: number) {
         {{ t("nav.incomeSummary") }}
       </h1>
 
-      <div class="flex items-end gap-4 mb-6">
-        <div class="flex flex-col gap-1">
-          <label class="text-xs font-medium text-gray-700">{{ t("adminBookings.year") }}</label>
-          <input
-            v-model.number="summaryYear"
-            type="number"
-            :min="2000"
-            :max="2100"
-            class="rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 w-28"
-          />
-        </div>
-        <div class="flex flex-col gap-1">
-          <label class="text-xs font-medium text-gray-700">{{ t("adminBookings.month") }}</label>
-          <select
-            v-model="summaryMonth"
-            class="rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400"
-          >
-            <option
-              v-for="opt in summaryMonthOptions"
-              :key="String(opt.value)"
-              :value="opt.value"
+      <div class="flex items-end justify-between gap-4 mb-6">
+        <div class="flex items-end gap-4">
+          <div class="flex flex-col gap-1">
+            <label class="text-xs font-medium text-gray-700">{{ t("adminBookings.year") }}</label>
+            <input
+              v-model.number="summaryYear"
+              type="number"
+              :min="2000"
+              :max="2100"
+              class="rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 w-28"
+            />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-xs font-medium text-gray-700">{{ t("adminBookings.month") }}</label>
+            <select
+              v-model="summaryMonth"
+              class="rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400"
             >
-              {{ opt.label }}
-            </option>
-          </select>
+              <option
+                v-for="opt in summaryMonthOptions"
+                :key="String(opt.value)"
+                :value="opt.value"
+              >
+                {{ opt.label }}
+              </option>
+            </select>
+          </div>
         </div>
+        <button
+          v-if="monthSelected"
+          class="flex items-center gap-2 rounded-md bg-gray-900 text-white px-4 py-2 text-sm font-medium hover:bg-gray-700 transition-colors"
+          @click="downloadPdf"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          {{ t("adminBookings.downloadPdf") }}
+        </button>
       </div>
 
       <table class="w-full text-sm">
@@ -89,6 +164,7 @@ function formatPrice(price: number) {
           </tr>
         </tbody>
       </table>
+
     </div>
   </AppShell>
 </template>

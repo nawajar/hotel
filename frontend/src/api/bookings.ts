@@ -89,6 +89,16 @@ export interface IncomeSummaryRow {
   net_revenue: number;
 }
 
+export interface IncomeDetailRow {
+  booking_ref: string;
+  customer_name: string | null;
+  paid_date: string;
+  room_revenue: number;
+  extra_revenue: number;
+  discount_total: number;
+  net_revenue: number;
+}
+
 export interface CreateBookingInput {
   check_in: string;
   check_out: string;
@@ -141,6 +151,10 @@ export const bookingsApi = {
     const params = new URLSearchParams({ year: String(year) });
     if (month !== undefined) params.set("month", String(month));
     return apiClient.get<IncomeSummaryRow[]>(`/bookings/income-summary?${params}`);
+  },
+  getIncomeDetail: (year: number, month: number) => {
+    const params = new URLSearchParams({ year: String(year), month: String(month) });
+    return apiClient.get<IncomeDetailRow[]>(`/bookings/income-detail?${params}`);
   },
   getRoomAvailability: (check_in: string, check_out: string) => {
     const params = new URLSearchParams({ check_in, check_out });
