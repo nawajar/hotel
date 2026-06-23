@@ -90,7 +90,7 @@ async function downloadDayPdf(date: string, rows: DailyReportDetailRow[]) {
   doc.text(t("dailyReport.pdfDayTitle", { date }), 14, 16);
   doc.setFontSize(9);
   doc.setTextColor(120);
-  doc.text(t("dailyReport.pdfGenerated", { time: new Date().toLocaleString() }), 14, 22);
+  doc.text(t("dailyReport.pdfGenerated", { time: settingsStore.formatDateTime(new Date().toISOString()) }), 14, 22);
   doc.setTextColor(0);
 
   const paidRows = rows.filter(r => r.record_type === "paid");
@@ -202,7 +202,7 @@ async function downloadPdf() {
   doc.text(t("dailyReport.pdfMonthTitle", { year: reportYear.value, month: monthLabel }), 14, 16);
   doc.setFontSize(9);
   doc.setTextColor(120);
-  doc.text(new Date().toLocaleString(), 14, 22);
+  doc.text(settingsStore.formatDateTime(new Date().toISOString()), 14, 22);
   doc.setTextColor(0);
 
   const t_totals = totals.value;
@@ -224,7 +224,7 @@ async function downloadPdf() {
     ]],
     body: [
       ...rows.map((r) => [
-        r.date,
+        settingsStore.formatDate(r.date),
         String(r.booking_count),
         r.cash_revenue.toLocaleString(),
         r.bank_transfer_revenue.toLocaleString(),
@@ -384,7 +384,7 @@ async function downloadPdf() {
                   <polyline points="9 18 15 12 9 6"/>
                 </svg>
               </td>
-              <td class="py-2 pr-4 font-mono text-gray-900">{{ row.date }}</td>
+              <td class="py-2 pr-4 font-mono text-gray-900">{{ settingsStore.formatDate(row.date) }}</td>
               <td class="py-2 pr-4 text-gray-600">{{ row.booking_count }}</td>
               <td class="py-2 pr-4 text-gray-600">{{ settingsStore.formatPrice(row.cash_revenue) }}</td>
               <td class="py-2 pr-4 text-gray-600">{{ settingsStore.formatPrice(row.bank_transfer_revenue) }}</td>

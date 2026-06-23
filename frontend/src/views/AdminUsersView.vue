@@ -4,8 +4,10 @@ import { useI18n } from "vue-i18n";
 import AppShell from "@/components/AppShell.vue";
 import { useUsersQuery, useCreateUserMutation } from "@/composables/useUsersQueries";
 import { ApiError } from "@/api/client";
+import { useSettingsStore } from "@/stores/settings";
 
 const { t } = useI18n();
+const settingsStore = useSettingsStore();
 
 const { data: users, isLoading } = useUsersQuery();
 const createUserMutation = useCreateUserMutation();
@@ -36,7 +38,7 @@ async function handleSubmit() {
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleString();
+  return settingsStore.formatDate(iso);
 }
 </script>
 

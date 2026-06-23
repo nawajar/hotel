@@ -2,6 +2,7 @@
 import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
+import { useSettingsStore } from "@/stores/settings";
 import FullCalendar from "@fullcalendar/vue3";
 import type { CalendarOptions, EventInput, EventClickArg, DatesSetArg } from "@fullcalendar/core";
 import type { ResourceInput } from "@fullcalendar/resource";
@@ -16,6 +17,7 @@ import type { CalendarBooking } from "@/api/calendar";
 const { t } = useI18n();
 const router = useRouter();
 const authStore = useAuthStore();
+const settingsStore = useSettingsStore();
 
 // ---- helpers ----
 function todayMonthStart(): string {
@@ -305,11 +307,11 @@ const legendEntries = computed(() => [
           </div>
           <div class="flex gap-2">
             <span class="text-gray-500 w-28 shrink-0">{{ t("calendar.checkIn") }}</span>
-            <span>{{ selectedBooking.check_in.slice(0, 10) }}</span>
+            <span>{{ settingsStore.formatDate(selectedBooking.check_in) }}</span>
           </div>
           <div class="flex gap-2">
             <span class="text-gray-500 w-28 shrink-0">{{ t("calendar.checkOut") }}</span>
-            <span>{{ selectedBooking.check_out.slice(0, 10) }}</span>
+            <span>{{ settingsStore.formatDate(selectedBooking.check_out) }}</span>
           </div>
           <div class="flex gap-2">
             <span class="text-gray-500 w-28 shrink-0">{{ t("calendar.status") }}</span>

@@ -5,6 +5,7 @@ import { useEditor, EditorContent } from "@tiptap/vue-3";
 import StarterKit from "@tiptap/starter-kit";
 import AppShell from "@/components/AppShell.vue";
 import { useAuthStore } from "@/stores/auth";
+import { useSettingsStore } from "@/stores/settings";
 import {
   useNotesQuery,
   useCreateNoteMutation,
@@ -14,6 +15,7 @@ import {
 
 const { t } = useI18n();
 const authStore = useAuthStore();
+const settingsStore = useSettingsStore();
 
 const { data: notes, isLoading } = useNotesQuery();
 const createMutation = useCreateNoteMutation();
@@ -56,7 +58,7 @@ function relativeDate(iso: string) {
   if (diff < 3600) return t("dashboard.dateMinutesAgo", { n: Math.floor(diff / 60) });
   if (diff < 86400) return t("dashboard.dateHoursAgo", { n: Math.floor(diff / 3600) });
   if (diff < 172800) return t("dashboard.dateYesterday");
-  return new Date(iso).toLocaleDateString();
+  return settingsStore.formatDate(iso);
 }
 </script>
 

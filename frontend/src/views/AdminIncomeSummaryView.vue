@@ -57,7 +57,7 @@ async function downloadPdf() {
     head: [["Date Paid", "Booking Ref", "Customer", "Room Revenue", "Extra", "Discount", "Net Revenue"]],
     body: [
       ...rows.map((r) => [
-        r.paid_date,
+        settingsStore.formatDate(r.paid_date),
         r.booking_ref,
         r.customer_name ?? "-",
         r.room_revenue.toLocaleString(),

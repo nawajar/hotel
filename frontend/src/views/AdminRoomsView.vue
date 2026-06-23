@@ -11,8 +11,10 @@ import {
   useToggleRoomMutation,
   useDeleteRoomMutation,
 } from "@/composables/useRoomsQueries";
+import { useSettingsStore } from "@/stores/settings";
 
 const { t } = useI18n();
+const settingsStore = useSettingsStore();
 
 const { data: rooms, isLoading } = useRoomsQuery();
 const createRoomMutation = useCreateRoomMutation();
@@ -109,7 +111,7 @@ async function handleDelete(room: Room) {
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleString();
+  return settingsStore.formatDate(iso);
 }
 
 function formatPrice(price: number) {
