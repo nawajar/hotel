@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { ref, watch, computed } from "vue";
 import { useI18n } from "vue-i18n";
 import AppShell from "@/components/AppShell.vue";
 import { authApi } from "@/api/auth";
@@ -41,6 +41,19 @@ const { t } = useI18n();
 const pingResult = ref("");
 const settingsStore = useSettingsStore();
 
+const DATE_FORMATS = computed(() => [
+  { label: "DD/MM/YYYY", value: "DD/MM/YYYY" },
+  { label: "MM/DD/YYYY", value: "MM/DD/YYYY" },
+  { label: "YYYY-MM-DD", value: "YYYY-MM-DD" },
+  { label: t("admin.settingsDateFormatLocale"), value: "locale" },
+]);
+
+const FONT_SIZES = computed(() => [
+  { label: t("admin.settingsFontSizeSmall"), value: "small" },
+  { label: t("admin.settingsFontSizeMedium"), value: "medium" },
+  { label: t("admin.settingsFontSizeLarge"), value: "large" },
+]);
+
 async function handlePing() {
   pingResult.value = "";
   try {
@@ -63,14 +76,20 @@ watch(selectedTimezone, (tz) => { settingsForm.value.timezone = tz; });
 const settingsForm = ref({
   timezone: settingsStore.timezone,
   priceSymbol: settingsStore.priceSymbol,
+  dateFormat: settingsStore.dateFormat,
+  fontSize: settingsStore.fontSize,
 });
 const settingsSaving = ref(false);
 const settingsSaved = ref(false);
 const settingsError = ref("");
 
-watch(() => [settingsStore.timezone, settingsStore.priceSymbol] as const, ([tz, sym]) => {
-  settingsForm.value = { timezone: tz, priceSymbol: sym };
-}, { immediate: true });
+watch(
+  () => [settingsStore.timezone, settingsStore.priceSymbol, settingsStore.dateFormat, settingsStore.fontSize] as const,
+  ([tz, sym, df, fs]) => {
+    settingsForm.value = { timezone: tz, priceSymbol: sym, dateFormat: df, fontSize: fs };
+  },
+  { immediate: true },
+);
 
 async function handleSaveSettings() {
   settingsSaving.value = true;
@@ -86,10 +105,15 @@ async function handleSaveSettings() {
     await settingsApi.update({
       timezone: settingsForm.value.timezone || undefined,
       price_symbol: settingsForm.value.priceSymbol || undefined,
+      date_format: settingsForm.value.dateFormat || undefined,
+      font_size: settingsForm.value.fontSize || undefined,
     });
     await settingsStore.load();
     settingsForm.value.timezone = settingsStore.timezone;
     settingsForm.value.priceSymbol = settingsStore.priceSymbol;
+    settingsForm.value.dateFormat = settingsStore.dateFormat;
+    settingsForm.value.fontSize = settingsStore.fontSize;
+    settingsStore.applyFontSize();
     settingsSaved.value = true;
     setTimeout(() => { settingsSaved.value = false; }, 2000);
   } catch (err) {
@@ -134,6 +158,24 @@ async function handleSaveSettings() {
             class="rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400"
             placeholder="₭"
           />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium text-gray-700">{{ t("admin.settingsDateFormat") }}</label>
+          <select
+            v-model="settingsForm.dateFormat"
+            class="rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 bg-white"
+          >
+            <option v-for="df in DATE_FORMATS" :key="df.value" :value="df.value">{{ df.label }}</option>
+          </select>
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium text-gray-700">{{ t("admin.settingsFontSize") }}</label>
+          <select
+            v-model="settingsForm.fontSize"
+            class="rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 bg-white"
+          >
+            <option v-for="fs in FONT_SIZES" :key="fs.value" :value="fs.value">{{ fs.label }}</option>
+          </select>
         </div>
         <div class="flex items-center gap-3">
           <button

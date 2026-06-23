@@ -3,11 +3,15 @@ import { apiClient } from "./client";
 export interface SystemSettings {
   timezone: string;
   price_symbol: string;
+  date_format: string;
+  font_size: string;
 }
 
 export interface UpdateSettingsInput {
   timezone?: string;
   price_symbol?: string;
+  date_format?: string;
+  font_size?: string;
 }
 
 export const settingsApi = {

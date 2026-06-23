@@ -48,7 +48,13 @@
     "settingsSave": "ບັນທຶກ",
     "settingsSaved": "ບັນທຶກແລ້ວ",
     "settingsError": "ບໍ່ສາມາດບັນທຶກການຕັ້ງຄ່າໄດ້",
-    "settingsInvalidTimezone": "ເຂດເວລາບໍ່ຖືກຕ້ອງ"
+    "settingsInvalidTimezone": "ເຂດເວລາບໍ່ຖືກຕ້ອງ",
+    "settingsDateFormat": "ຮູບແບບວັນທີ",
+    "settingsDateFormatLocale": "5 ມ.ກ. 2025 (ຕາມພາສາ)",
+    "settingsFontSize": "ຂະໜາດຕົວໜັງສື",
+    "settingsFontSizeSmall": "ນ້ອຍ",
+    "settingsFontSizeMedium": "ກາງ",
+    "settingsFontSizeLarge": "ໃຫຍ່"
   },
   "adminTranslations": {
     "title": "ການແປພາສາ",
@@ -222,7 +228,12 @@
     "roomStatusAvailable": "ຫ້ອງວ່າງ",
     "roomStatusOccupied": "ມີຜູ້ພັກ",
     "roomStatusDisabled": "ປິດໃຊ້ງານ",
-    "noRooms": "ບໍ່ພົບຫ້ອງພັກ"
+    "noRooms": "ບໍ່ພົບຫ້ອງພັກ",
+    "depositColumn": "ເງິນມັດຈຳ",
+    "depositHeldBadge": "ຍັງຖືໄວ້",
+    "depositsHeldTitle": "ເງິນມັດຈຳທີ່ຍັງຖືໄວ້",
+    "depositsHeldSummary": "{count} ການຈອງ · {amount} ທີ່ຖືໄວ້",
+    "depositsReturnedNote": "ຄືນແລ້ວ {n} ລາຍການ"
   },
   "dailyReport": {
     "date": "ວັນທີຊຳລະ",

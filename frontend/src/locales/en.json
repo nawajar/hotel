@@ -48,7 +48,13 @@
     "settingsSave": "Save",
     "settingsSaved": "Saved",
     "settingsError": "Failed to save settings.",
-    "settingsInvalidTimezone": "Invalid timezone."
+    "settingsInvalidTimezone": "Invalid timezone.",
+    "settingsDateFormat": "Date Format",
+    "settingsDateFormatLocale": "Jan 5, 2025 (locale)",
+    "settingsFontSize": "Font Size",
+    "settingsFontSizeSmall": "Small",
+    "settingsFontSizeMedium": "Medium",
+    "settingsFontSizeLarge": "Large"
   },
   "adminTranslations": {
     "title": "Translations",
@@ -222,7 +228,12 @@
     "roomStatusAvailable": "Available",
     "roomStatusOccupied": "Occupied",
     "roomStatusDisabled": "Disabled",
-    "noRooms": "No rooms found."
+    "noRooms": "No rooms found.",
+    "depositColumn": "Security Deposit",
+    "depositHeldBadge": "Held",
+    "depositsHeldTitle": "Security Deposits Held",
+    "depositsHeldSummary": "{count} bookings · {amount} held",
+    "depositsReturnedNote": "{n} returned"
   },
   "dailyReport": {
     "date": "Paid Date",

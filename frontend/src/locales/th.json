@@ -48,7 +48,13 @@
     "settingsSave": "บันทึก",
     "settingsSaved": "บันทึกแล้ว",
     "settingsError": "ไม่สามารถบันทึกการตั้งค่าได้",
-    "settingsInvalidTimezone": "เขตเวลาไม่ถูกต้อง"
+    "settingsInvalidTimezone": "เขตเวลาไม่ถูกต้อง",
+    "settingsDateFormat": "รูปแบบวันที่",
+    "settingsDateFormatLocale": "5 ม.ค. 2568 (ตามภาษา)",
+    "settingsFontSize": "ขนาดตัวอักษร",
+    "settingsFontSizeSmall": "เล็ก",
+    "settingsFontSizeMedium": "กลาง",
+    "settingsFontSizeLarge": "ใหญ่"
   },
   "adminTranslations": {
     "title": "คำแปล",
@@ -228,7 +234,12 @@
     "roomStatusAvailable": "ว่าง",
     "roomStatusOccupied": "มีผู้เข้าพัก",
     "roomStatusDisabled": "ปิดใช้งาน",
-    "noRooms": "ไม่พบห้องพัก"
+    "noRooms": "ไม่พบห้องพัก",
+    "depositColumn": "เงินมัดจำ",
+    "depositHeldBadge": "ยังถือไว้",
+    "depositsHeldTitle": "เงินมัดจำที่ยังถือไว้",
+    "depositsHeldSummary": "{count} การจอง · {amount} ที่ถือไว้",
+    "depositsReturnedNote": "คืนแล้ว {n} รายการ"
   },
   "dailyReport": {
     "date": "วันที่ชำระ",
