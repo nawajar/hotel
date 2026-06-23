@@ -53,6 +53,12 @@ const router = createRouter({
       meta: { requiresAuth: true, requiresAdmin: true },
     },
     {
+      path: "/admin/daily-report",
+      name: "admin-daily-report",
+      component: () => import("@/views/DailyReportView.vue"),
+      meta: { requiresAuth: true, requiresAdmin: true },
+    },
+    {
       path: "/calendar",
       name: "calendar",
       component: () => import("@/views/CalendarView.vue"),

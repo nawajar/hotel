@@ -6,15 +6,27 @@ import {
   type UpdateBookingInput,
   type AddExtraServiceInput,
 } from "@/api/bookings";
-export { type IncomeDetailRow } from "@/api/bookings";
+export { type IncomeDetailRow, type DailyReportRow, type DailyReportDetailRow } from "@/api/bookings";
 
 export function useUploadDocumentMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ bookingId, file }: { bookingId: string; file: File }) =>
-      bookingsApi.uploadDocument(bookingId, file),
+    mutationFn: ({ bookingId, file, category }: { bookingId: string; file: File; category?: string }) =>
+      bookingsApi.uploadDocument(bookingId, file, category),
     onSuccess: (_data, { bookingId }) => {
       queryClient.invalidateQueries({ queryKey: ["admin-booking", bookingId] });
+    },
+  });
+}
+
+export function useReturnDepositMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ bookingId }: { bookingId: string }) =>
+      bookingsApi.returnDeposit(bookingId),
+    onSuccess: (_data, { bookingId }) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-booking", bookingId] });
+      queryClient.invalidateQueries({ queryKey: ["admin-bookings"] });
     },
   });
 }
@@ -171,3 +183,35 @@ export function useIncomeDetailQuery(
     enabled,
   });
 }
+
+export function useDailyReportQuery(year: Ref<number>, month: Ref<number>) {
+  return useQuery({
+    queryKey: computed(() => ["daily-report", year.value, month.value]),
+    queryFn: () => bookingsApi.getDailyReport(year.value, month.value),
+  });
+}
+
+export function useCheckInMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ bookingId }: { bookingId: string }) =>
+      bookingsApi.checkIn(bookingId),
+    onSuccess: (_data, { bookingId }) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-booking", bookingId] });
+      queryClient.invalidateQueries({ queryKey: ["admin-bookings"] });
+    },
+  });
+}
+
+export function useCheckOutMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ bookingId }: { bookingId: string }) =>
+      bookingsApi.checkOut(bookingId),
+    onSuccess: (_data, { bookingId }) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-booking", bookingId] });
+      queryClient.invalidateQueries({ queryKey: ["admin-bookings"] });
+    },
+  });
+}
+

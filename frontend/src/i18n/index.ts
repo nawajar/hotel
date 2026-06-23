@@ -1,9 +1,10 @@
 import { createI18n } from "vue-i18n";
 import en from "@/locales/en.json";
 import lo from "@/locales/lo.json";
+import th from "@/locales/th.json";
 import { unflattenMessages } from "./flatten";
 
-export const SUPPORTED_LOCALES = ["en", "lo"] as const;
+export const SUPPORTED_LOCALES = ["en", "lo", "th"] as const;
 export type Locale = (typeof SUPPORTED_LOCALES)[number];
 
 const LOCALE_STORAGE_KEY = "locale";
@@ -19,7 +20,7 @@ export const i18n = createI18n({
   legacy: false,
   locale: getInitialLocale(),
   fallbackLocale: "en",
-  messages: { en, lo },
+  messages: { en, lo, th },
 });
 
 export function setLocale(locale: Locale) {

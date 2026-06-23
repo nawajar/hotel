@@ -8,6 +8,7 @@ import { flattenMessages } from "@/i18n/flatten";
 import { setMessageLive, type Locale } from "@/i18n";
 import en from "@/locales/en.json";
 import lo from "@/locales/lo.json";
+import th from "@/locales/th.json";
 
 const { t } = useI18n();
 const queryClient = useQueryClient();
@@ -15,6 +16,7 @@ const queryClient = useQueryClient();
 const defaults: Record<Locale, Record<string, string>> = {
   en: flattenMessages(en),
   lo: flattenMessages(lo),
+  th: flattenMessages(th),
 };
 const allKeys = Object.keys(defaults.en).sort();
 
@@ -116,17 +118,18 @@ async function reset(key: string, locale: Locale) {
           </div>
 
           <!-- Column headers -->
-          <div class="grid grid-cols-[10rem_1fr_1fr] gap-4 px-4 py-2 border-b border-gray-100 text-xs font-medium text-gray-400 uppercase tracking-wide">
+          <div class="grid grid-cols-[10rem_1fr_1fr_1fr] gap-4 px-4 py-2 border-b border-gray-100 text-xs font-medium text-gray-400 uppercase tracking-wide">
             <div>{{ t("adminTranslations.key") }}</div>
             <div>{{ t("adminTranslations.english") }}</div>
             <div>{{ t("adminTranslations.lao") }}</div>
+            <div>{{ t("adminTranslations.thai") }}</div>
           </div>
 
           <!-- Rows -->
           <div
             v-for="key in keys"
             :key="key"
-            class="grid grid-cols-[10rem_1fr_1fr] gap-4 px-4 py-3 border-b border-gray-50 last:border-b-0 items-start hover:bg-gray-50/50"
+            class="grid grid-cols-[10rem_1fr_1fr_1fr] gap-4 px-4 py-3 border-b border-gray-50 last:border-b-0 items-start hover:bg-gray-50/50"
           >
             <div class="font-mono text-xs text-gray-500 pt-2 truncate" :title="key">
               {{ key.split(".").slice(1).join(".") }}
@@ -171,6 +174,28 @@ async function reset(key: string, locale: Locale) {
               </div>
               <span v-if="savedField === fieldKey(key, 'lo')" class="mt-1 inline-block text-xs text-green-600">{{ t("adminTranslations.saved") }}</span>
               <button v-else-if="isOverridden(key, 'lo')" class="mt-1 text-xs text-gray-400 hover:text-gray-600 underline" @click="reset(key, 'lo')">
+                {{ t("adminTranslations.reset") }}
+              </button>
+              <span v-else class="mt-1 inline-block text-xs text-gray-400">{{ t("adminTranslations.default") }}</span>
+            </div>
+
+            <!-- Thai -->
+            <div>
+              <div class="flex items-center gap-2">
+                <input
+                  :value="valueFor(key, 'th')"
+                  class="input input-bordered input-sm w-full text-sm"
+                  @input="onInput(key, 'th', ($event.target as HTMLInputElement).value)"
+                />
+                <button
+                  class="btn btn-sm bg-gray-900 text-white hover:bg-gray-700 border-none whitespace-nowrap"
+                  :class="savingField === fieldKey(key, 'th') ? 'loading' : ''"
+                  :disabled="savingField === fieldKey(key, 'th')"
+                  @click="save(key, 'th')"
+                >{{ t("adminTranslations.save") }}</button>
+              </div>
+              <span v-if="savedField === fieldKey(key, 'th')" class="mt-1 inline-block text-xs text-green-600">{{ t("adminTranslations.saved") }}</span>
+              <button v-else-if="isOverridden(key, 'th')" class="mt-1 text-xs text-gray-400 hover:text-gray-600 underline" @click="reset(key, 'th')">
                 {{ t("adminTranslations.reset") }}
               </button>
               <span v-else class="mt-1 inline-block text-xs text-gray-400">{{ t("adminTranslations.default") }}</span>
