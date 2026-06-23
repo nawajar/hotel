@@ -3,8 +3,10 @@ import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import AppShell from "@/components/AppShell.vue";
 import { useIncomeSummaryQuery, useIncomeDetailQuery } from "@/composables/useBookingsQueries";
+import { useSettingsStore } from "@/stores/settings";
 
 const { t } = useI18n();
+const settingsStore = useSettingsStore();
 
 const summaryYear = ref(new Date().getFullYear());
 const summaryMonth = ref<number | undefined>(undefined);
@@ -25,10 +27,6 @@ const summaryMonthOptions = computed(() => [
     label: String(i + 1).padStart(2, "0"),
   })),
 ]);
-
-function formatPrice(price: number) {
-  return price.toLocaleString();
-}
 
 async function downloadPdf() {
   const rows = incomeDetail.value;
@@ -157,10 +155,10 @@ async function downloadPdf() {
           >
             <td class="py-2 pr-4 font-mono text-gray-900">{{ row.period }}</td>
             <td class="py-2 pr-4 text-gray-600">{{ row.booking_count }}</td>
-            <td class="py-2 pr-4 text-gray-600">₭{{ formatPrice(row.room_revenue) }}</td>
-            <td class="py-2 pr-4 text-gray-600">₭{{ formatPrice(row.extra_revenue) }}</td>
-            <td class="py-2 pr-4 text-gray-600">₭{{ formatPrice(row.discount_total) }}</td>
-            <td class="py-2 text-gray-900 font-medium">₭{{ formatPrice(row.net_revenue) }}</td>
+            <td class="py-2 pr-4 text-gray-600">{{ settingsStore.formatPrice(row.room_revenue) }}</td>
+            <td class="py-2 pr-4 text-gray-600">{{ settingsStore.formatPrice(row.extra_revenue) }}</td>
+            <td class="py-2 pr-4 text-gray-600">{{ settingsStore.formatPrice(row.discount_total) }}</td>
+            <td class="py-2 text-gray-900 font-medium">{{ settingsStore.formatPrice(row.net_revenue) }}</td>
           </tr>
         </tbody>
       </table>

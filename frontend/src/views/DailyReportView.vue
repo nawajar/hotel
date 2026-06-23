@@ -6,8 +6,10 @@ import { useDailyReportQuery } from "@/composables/useBookingsQueries";
 import { bookingsApi, type DailyReportDetailRow } from "@/api/bookings";
 import { useQuery } from "@tanstack/vue-query";
 import { registerPdfFont } from "@/utils/pdfFont";
+import { useSettingsStore } from "@/stores/settings";
 
 const { t, locale } = useI18n();
+const settingsStore = useSettingsStore();
 
 const reportYear = ref(new Date().getFullYear());
 const reportMonth = ref(new Date().getMonth() + 1);
@@ -62,14 +64,6 @@ async function toggleExpand(date: string) {
       loadingDates.value = new Set(loadingDates.value);
     }
   }
-}
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" });
-}
-
-function formatPrice(price: number) {
-  return price.toLocaleString();
 }
 
 function paymentBadgeClass(method: string | null) {
@@ -134,15 +128,15 @@ async function downloadDayPdf(date: string, rows: DailyReportDetailRow[]) {
       ...rows.map((r, i) => {
         if (r.record_type === "paid") paidRunning += r.net_revenue;
         const depositCell = r.deposit_amount
-          ? `₭${r.deposit_amount.toLocaleString()} (${r.deposit_returned ? t("dailyReport.pdfDepositReturned") : t("dailyReport.depositHeld")})`
+          ? `${settingsStore.priceSymbol}${r.deposit_amount.toLocaleString()} (${r.deposit_returned ? t("dailyReport.pdfDepositReturned") : t("dailyReport.depositHeld")})`
           : "—";
         return [
           String(i + 1),
           r.booking_ref,
           r.customer_name ?? "—",
           r.rooms || "—",
-          formatDate(r.check_in),
-          formatDate(r.check_out),
+          settingsStore.formatDate(r.check_in),
+          settingsStore.formatDate(r.check_out),
           r.payment_method === "cash"
             ? t("adminBookings.paymentMethodCash")
             : r.payment_method === "bank_transfer"
@@ -171,9 +165,9 @@ async function downloadDayPdf(date: string, rows: DailyReportDetailRow[]) {
   doc.setFont(fontName, "bold");
   doc.text(t("dailyReport.pdfPaidSummary"), 14, finalY);
   doc.setFont(fontName, "normal");
-  doc.text(`${t("dailyReport.cashRevenue")}: ₭${cashTotal.toLocaleString()}`, 14, finalY + 6);
-  doc.text(`${t("dailyReport.bankTransferRevenue")}: ₭${bankTotal.toLocaleString()}`, 14, finalY + 12);
-  if (unspecTotal > 0) doc.text(`${t("dailyReport.unspecifiedRevenue")}: ₭${unspecTotal.toLocaleString()}`, 14, finalY + 18);
+  doc.text(`${t("dailyReport.cashRevenue")}: ${settingsStore.priceSymbol}${cashTotal.toLocaleString()}`, 14, finalY + 6);
+  doc.text(`${t("dailyReport.bankTransferRevenue")}: ${settingsStore.priceSymbol}${bankTotal.toLocaleString()}`, 14, finalY + 12);
+  if (unspecTotal > 0) doc.text(`${t("dailyReport.unspecifiedRevenue")}: ${settingsStore.priceSymbol}${unspecTotal.toLocaleString()}`, 14, finalY + 18);
   const afterPayment = finalY + (unspecTotal > 0 ? 26 : 20);
   doc.setFont(fontName, "bold");
   doc.text(t("dailyReport.pdfTotalPaid", { amount: paidTotal.toLocaleString() }), 14, afterPayment);
@@ -294,7 +288,7 @@ async function downloadPdf() {
           <p class="mt-0.5 text-sm" :class="depositSummary.count > 0 ? 'text-amber-900' : 'text-green-800'">
             <span class="font-semibold">{{ t("dailyReport.bookingsCount", { n: depositSummary.count }) }}</span>
             &nbsp;·&nbsp;
-            <span class="font-semibold">₭{{ formatPrice(depositSummary.total_amount) }}</span>
+            <span class="font-semibold">{{ settingsStore.formatPrice(depositSummary.total_amount) }}</span>
             <span class="text-xs ml-2 opacity-70">{{ t("dailyReport.depositsHeldHint") }}</span>
           </p>
         </div>
@@ -392,15 +386,15 @@ async function downloadPdf() {
               </td>
               <td class="py-2 pr-4 font-mono text-gray-900">{{ row.date }}</td>
               <td class="py-2 pr-4 text-gray-600">{{ row.booking_count }}</td>
-              <td class="py-2 pr-4 text-gray-600">₭{{ formatPrice(row.cash_revenue) }}</td>
-              <td class="py-2 pr-4 text-gray-600">₭{{ formatPrice(row.bank_transfer_revenue) }}</td>
-              <td class="py-2 pr-4 text-gray-600">₭{{ formatPrice(row.unspecified_revenue) }}</td>
-              <td class="py-2 pr-4 text-gray-900 font-medium">₭{{ formatPrice(row.total_revenue) }}</td>
-              <td class="py-2 pr-4 text-gray-900">₭{{ formatPrice(row.cumulative_total) }}</td>
+              <td class="py-2 pr-4 text-gray-600">{{ settingsStore.formatPrice(row.cash_revenue) }}</td>
+              <td class="py-2 pr-4 text-gray-600">{{ settingsStore.formatPrice(row.bank_transfer_revenue) }}</td>
+              <td class="py-2 pr-4 text-gray-600">{{ settingsStore.formatPrice(row.unspecified_revenue) }}</td>
+              <td class="py-2 pr-4 text-gray-900 font-medium">{{ settingsStore.formatPrice(row.total_revenue) }}</td>
+              <td class="py-2 pr-4 text-gray-900">{{ settingsStore.formatPrice(row.cumulative_total) }}</td>
               <td class="py-2 pr-4 text-right">
                 <span v-if="row.deposit_held_count > 0" class="inline-flex flex-col items-end leading-tight">
                   <span class="text-xs font-semibold text-amber-600">{{ t("dailyReport.bookingsCount", { n: row.deposit_held_count }) }}</span>
-                  <span class="text-xs text-amber-500">₭{{ formatPrice(row.deposit_held_amount) }}</span>
+                  <span class="text-xs text-amber-500">{{ settingsStore.formatPrice(row.deposit_held_amount) }}</span>
                 </span>
                 <span v-else class="text-gray-300 text-xs">—</span>
               </td>
@@ -409,7 +403,7 @@ async function downloadPdf() {
                 <span v-else class="text-gray-300 text-xs">—</span>
               </td>
               <td class="py-2 text-right">
-                <span v-if="row.unpaid_amount > 0" class="text-xs text-orange-400">₭{{ formatPrice(row.unpaid_amount) }}</span>
+                <span v-if="row.unpaid_amount > 0" class="text-xs text-orange-400">{{ settingsStore.formatPrice(row.unpaid_amount) }}</span>
                 <span v-else class="text-gray-300 text-xs">—</span>
               </td>
             </tr>
@@ -473,8 +467,8 @@ async function downloadPdf() {
                         <td class="py-1.5 pr-4 font-mono text-gray-700">{{ b.booking_ref }}</td>
                         <td class="py-1.5 pr-4 text-gray-700">{{ b.customer_name ?? "—" }}</td>
                         <td class="py-1.5 pr-4 text-gray-700">{{ b.rooms || "—" }}</td>
-                        <td class="py-1.5 pr-4 text-gray-500">{{ formatDate(b.check_in) }}</td>
-                        <td class="py-1.5 pr-4 text-gray-500">{{ formatDate(b.check_out) }}</td>
+                        <td class="py-1.5 pr-4 text-gray-500">{{ settingsStore.formatDate(b.check_in) }}</td>
+                        <td class="py-1.5 pr-4 text-gray-500">{{ settingsStore.formatDate(b.check_out) }}</td>
                         <td class="py-1.5 pr-4">
                           <span class="badge badge-xs" :class="paymentBadgeClass(b.payment_method)">
                             {{ paymentLabel(b.payment_method) }}
@@ -485,14 +479,14 @@ async function downloadPdf() {
                             {{ b.record_type === 'paid' ? t('adminBookings.paymentPaid') : t('adminBookings.paymentUnpaid') }}
                           </span>
                         </td>
-                        <td class="py-1.5 pr-4 text-right font-medium text-gray-900">₭{{ formatPrice(b.net_revenue) }}</td>
+                        <td class="py-1.5 pr-4 text-right font-medium text-gray-900">{{ settingsStore.formatPrice(b.net_revenue) }}</td>
                         <td class="py-1.5 text-right">
                           <span
                             v-if="b.deposit_amount != null && b.deposit_amount > 0"
                             class="inline-flex items-center gap-1 text-xs font-medium"
                             :class="b.deposit_returned ? 'text-green-600' : 'text-amber-600'"
                           >
-                            ₭{{ formatPrice(b.deposit_amount) }}
+                            {{ settingsStore.formatPrice(b.deposit_amount) }}
                             <span class="badge badge-xs" :class="b.deposit_returned ? 'badge-success' : 'badge-warning'">
                               {{ b.deposit_returned ? t("adminBookings.depositReturned") : t("dailyReport.depositHeld") }}
                             </span>
@@ -512,15 +506,15 @@ async function downloadPdf() {
             <td class="py-2 pr-2"></td>
             <td class="py-2 pr-4">{{ t("dailyReport.totals") }}</td>
             <td class="py-2 pr-4">{{ totals.booking_count }}</td>
-            <td class="py-2 pr-4">₭{{ formatPrice(totals.cash_revenue) }}</td>
-            <td class="py-2 pr-4">₭{{ formatPrice(totals.bank_transfer_revenue) }}</td>
-            <td class="py-2 pr-4">₭{{ formatPrice(totals.unspecified_revenue) }}</td>
-            <td class="py-2 pr-4">₭{{ formatPrice(totals.total_revenue) }}</td>
+            <td class="py-2 pr-4">{{ settingsStore.formatPrice(totals.cash_revenue) }}</td>
+            <td class="py-2 pr-4">{{ settingsStore.formatPrice(totals.bank_transfer_revenue) }}</td>
+            <td class="py-2 pr-4">{{ settingsStore.formatPrice(totals.unspecified_revenue) }}</td>
+            <td class="py-2 pr-4">{{ settingsStore.formatPrice(totals.total_revenue) }}</td>
             <td class="py-2 pr-4">—</td>
             <td class="py-2 pr-4 text-right">
               <span v-if="totals.deposit_held_count > 0" class="inline-flex flex-col items-end leading-tight text-amber-600">
                 <span>{{ t("dailyReport.bookingsCount", { n: totals.deposit_held_count }) }}</span>
-                <span class="text-sm">₭{{ formatPrice(totals.deposit_held_amount) }}</span>
+                <span class="text-sm">{{ settingsStore.formatPrice(totals.deposit_held_amount) }}</span>
               </span>
               <span v-else class="text-gray-400 font-normal text-xs">—</span>
             </td>
@@ -528,7 +522,7 @@ async function downloadPdf() {
               {{ totals.unpaid_count > 0 ? totals.unpaid_count : "—" }}
             </td>
             <td class="py-2 text-right text-orange-500">
-              {{ totals.unpaid_amount > 0 ? "₭" + formatPrice(totals.unpaid_amount) : "—" }}
+              {{ totals.unpaid_amount > 0 ? settingsStore.formatPrice(totals.unpaid_amount) : "—" }}
             </td>
           </tr>
         </tbody>

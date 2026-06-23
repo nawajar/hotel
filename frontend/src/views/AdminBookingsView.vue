@@ -23,8 +23,12 @@ import {
   useCheckOutMutation,
 } from "@/composables/useBookingsQueries";
 import { bookingsApi } from "@/api/bookings";
+import { useSettingsStore } from "@/stores/settings";
+import { useRoomsQuery } from "@/composables/useRoomsQueries";
 
 const { t } = useI18n();
+const settingsStore = useSettingsStore();
+const { data: rooms } = useRoomsQuery();
 
 const { data: bookings, isLoading: bookingsLoading } = useBookingsQuery();
 const { data: todaySummary } = useTodaySummaryQuery();
@@ -236,6 +240,18 @@ const minCheckOut = computed<Date | undefined>(() => {
 const { data: roomAvailability, isLoading: availabilityLoading } = useRoomAvailabilityQuery(
   availabilityCheckIn,
   availabilityCheckOut,
+);
+
+// Today's availability for the "Available" stat panel
+const todayAvailCheckIn = computed(() => `${todayDate.value}T14:00:00Z`);
+const todayAvailCheckOut = computed(() => {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}T12:00:00Z`;
+});
+const { data: todayRoomAvailability } = useRoomAvailabilityQuery(
+  todayAvailCheckIn,
+  todayAvailCheckOut,
 );
 
 function openAddDialog() {
@@ -479,20 +495,12 @@ function computeTotal(detail: BookingDetail): number {
   return subtotal * (1 - (b.discount_value ?? 0) / 100);
 }
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString();
-}
-
-function formatPrice(price: number) {
-  return price.toLocaleString();
-}
-
 const isPending = computed(
   () => createBookingMutation.isPending.value || updateBookingMutation.isPending.value,
 );
 
 // --- Stat panel ---
-type StatType = "occupied" | "check_ins" | "check_outs";
+type StatType = "occupied" | "check_ins" | "check_outs" | "available";
 const statPanel = ref<{ visible: boolean; type: StatType | null }>({ visible: false, type: null });
 const statDialogEl = ref<HTMLDialogElement>();
 
@@ -506,6 +514,7 @@ const statPanelTitle = computed(() => {
     case "occupied": return t("adminBookings.statOccupied");
     case "check_ins": return t("adminBookings.statCheckInsToday");
     case "check_outs": return t("adminBookings.statCheckOutsToday");
+    case "available": return t("adminBookings.statAvailable");
     default: return "";
   }
 });
@@ -520,7 +529,49 @@ const statPanelBookings = computed(() => {
       case "occupied": return ci <= todayDate.value && co > todayDate.value;
       case "check_ins": return ci === todayDate.value;
       case "check_outs": return co === todayDate.value;
+      default: return false;
     }
+  });
+});
+
+type RoomStatus = "available" | "occupied" | "disabled";
+
+interface RoomWithStatus {
+  id: string;
+  room_number: string;
+  room_name: string;
+  roomStatus: RoomStatus;
+}
+
+const statPanelRooms = computed((): RoomWithStatus[] => {
+  if (!rooms.value) return [];
+
+  // Build a set of room_ids that are NOT available today
+  // (i.e., occupied) from todayRoomAvailability
+  const occupiedIds = new Set<string>();
+  if (todayRoomAvailability.value) {
+    for (const r of todayRoomAvailability.value) {
+      if (!r.is_available) {
+        occupiedIds.add(r.id);
+      }
+    }
+  }
+
+  return rooms.value.map((room) => {
+    let roomStatus: RoomStatus;
+    if (!room.is_active) {
+      roomStatus = "disabled";
+    } else if (occupiedIds.has(room.id)) {
+      roomStatus = "occupied";
+    } else {
+      roomStatus = "available";
+    }
+    return {
+      id: room.id,
+      room_number: room.room_number,
+      room_name: room.room_name,
+      roomStatus,
+    };
   });
 });
 
@@ -544,33 +595,40 @@ function openDetailFromPanel(id: string) {
         <p class="text-3xl font-bold text-base-content">{{ todaySummary?.total_rooms ?? "—" }}</p>
       </div>
       <!-- Available -->
-      <div class="bg-base-100 rounded-xl border border-base-200 shadow-sm px-5 py-4 border-t-2 border-t-emerald-400">
+      <div
+        class="relative bg-base-100 rounded-xl border border-base-200 shadow-sm px-5 py-4 border-t-2 border-t-emerald-400 cursor-pointer hover:bg-base-200/60 transition-colors"
+        @click="openStatPanel('available')"
+      >
         <p class="text-[0.65rem] font-semibold uppercase tracking-widest text-base-content/40 h-8 flex items-start">{{ t("adminBookings.statAvailable") }}</p>
         <p class="text-3xl font-bold text-base-content">{{ todaySummary?.available_now ?? "—" }}</p>
+        <svg class="absolute bottom-2 right-2 opacity-40" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
       </div>
       <!-- Occupied -->
       <div
-        class="bg-base-100 rounded-xl border border-base-200 shadow-sm px-5 py-4 border-t-2 border-t-amber-400 cursor-pointer hover:bg-base-200/60 transition-colors"
+        class="relative bg-base-100 rounded-xl border border-base-200 shadow-sm px-5 py-4 border-t-2 border-t-amber-400 cursor-pointer hover:bg-base-200/60 transition-colors"
         @click="openStatPanel('occupied')"
       >
         <p class="text-[0.65rem] font-semibold uppercase tracking-widest text-base-content/40 h-8 flex items-start">{{ t("adminBookings.statOccupied") }}</p>
         <p class="text-3xl font-bold text-base-content">{{ todaySummary?.occupied_now ?? "—" }}</p>
+        <svg class="absolute bottom-2 right-2 opacity-40" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
       </div>
       <!-- Check-ins today -->
       <div
-        class="bg-base-100 rounded-xl border border-base-200 shadow-sm px-5 py-4 border-t-2 border-t-sky-400 cursor-pointer hover:bg-base-200/60 transition-colors"
+        class="relative bg-base-100 rounded-xl border border-base-200 shadow-sm px-5 py-4 border-t-2 border-t-sky-400 cursor-pointer hover:bg-base-200/60 transition-colors"
         @click="openStatPanel('check_ins')"
       >
         <p class="text-[0.65rem] font-semibold uppercase tracking-widest text-base-content/40 h-8 flex items-start">{{ t("adminBookings.statCheckInsToday") }}</p>
         <p class="text-3xl font-bold text-base-content">{{ todaySummary?.check_ins_today ?? "—" }}</p>
+        <svg class="absolute bottom-2 right-2 opacity-40" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
       </div>
       <!-- Check-outs today -->
       <div
-        class="bg-base-100 rounded-xl border border-base-200 shadow-sm px-5 py-4 border-t-2 border-t-violet-400 cursor-pointer hover:bg-base-200/60 transition-colors"
+        class="relative bg-base-100 rounded-xl border border-base-200 shadow-sm px-5 py-4 border-t-2 border-t-violet-400 cursor-pointer hover:bg-base-200/60 transition-colors"
         @click="openStatPanel('check_outs')"
       >
         <p class="text-[0.65rem] font-semibold uppercase tracking-widest text-base-content/40 h-8 flex items-start">{{ t("adminBookings.statCheckOutsToday") }}</p>
         <p class="text-3xl font-bold text-base-content">{{ todaySummary?.check_outs_today ?? "—" }}</p>
+        <svg class="absolute bottom-2 right-2 opacity-40" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
       </div>
     </div>
 
@@ -672,8 +730,8 @@ function openDetailFromPanel(id: string) {
                     {{ booking.payment_status === "paid" ? t("adminBookings.paymentPaid") : t("adminBookings.paymentUnpaid") }}
                   </span>
                 </td>
-                <td>{{ formatDate(booking.check_in) }}</td>
-                <td>{{ formatDate(booking.check_out) }}</td>
+                <td>{{ settingsStore.formatDate(booking.check_in) }}</td>
+                <td>{{ settingsStore.formatDate(booking.check_out) }}</td>
                 <td class="text-xs text-base-content/50">{{ booking.customer_name ?? "—" }}</td>
                 <td>
                   <div class="flex items-center gap-1">
@@ -751,11 +809,11 @@ function openDetailFromPanel(id: string) {
           <div class="divide-y divide-base-200 border border-base-200 rounded-xl overflow-hidden text-sm">
             <div class="flex items-center justify-between px-4 py-2.5">
               <span class="text-base-content/50">{{ t("adminBookings.checkIn") }}</span>
-              <span class="font-medium">{{ formatDate(bookingDetail.booking.check_in) }}</span>
+              <span class="font-medium">{{ settingsStore.formatDate(bookingDetail.booking.check_in) }}</span>
             </div>
             <div class="flex items-center justify-between px-4 py-2.5">
               <span class="text-base-content/50">{{ t("adminBookings.checkOut") }}</span>
-              <span class="font-medium">{{ formatDate(bookingDetail.booking.check_out) }}</span>
+              <span class="font-medium">{{ settingsStore.formatDate(bookingDetail.booking.check_out) }}</span>
             </div>
             <div class="flex items-center justify-between px-4 py-2.5">
               <span class="text-base-content/50">{{ t("adminBookings.status") }}</span>
@@ -783,7 +841,7 @@ function openDetailFromPanel(id: string) {
             <div v-if="bookingDetail.booking.deposit_amount != null" class="flex items-center justify-between px-4 py-2.5">
               <span class="text-base-content/50">{{ t("adminBookings.depositAmount") }}</span>
               <div class="flex items-center gap-2">
-                <span class="font-medium">₭{{ formatPrice(bookingDetail.booking.deposit_amount) }}</span>
+                <span class="font-medium">{{ settingsStore.formatPrice(bookingDetail.booking.deposit_amount) }}</span>
                 <span v-if="bookingDetail.booking.deposit_returned" class="badge badge-sm badge-success">
                   {{ t("adminBookings.depositReturned") }}
                   <template v-if="bookingDetail.booking.deposit_returned_at">
@@ -840,7 +898,7 @@ function openDetailFromPanel(id: string) {
             </div>
             <div v-if="bookingDetail.booking.discount_type" class="flex items-center justify-between px-4 py-2.5">
               <span class="text-base-content/50">{{ t("adminBookings.discount") }}</span>
-              <span class="font-medium">{{ bookingDetail.booking.discount_type === "percentage" ? "%" : "₭" }}{{ bookingDetail.booking.discount_value }}</span>
+              <span class="font-medium">{{ bookingDetail.booking.discount_type === "percentage" ? "%" : settingsStore.priceSymbol }}{{ bookingDetail.booking.discount_value }}</span>
             </div>
           </div>
 
@@ -896,7 +954,7 @@ function openDetailFromPanel(id: string) {
                     <td>
                       <span :class="['badge badge-xs', room.status === 'active' ? 'badge-success' : 'badge-error']">{{ room.status }}</span>
                     </td>
-                    <td>₭{{ formatPrice(room.price_snapshot) }}</td>
+                    <td>{{ settingsStore.formatPrice(room.price_snapshot) }}</td>
                     <td>
                       <button
                         v-if="room.status === 'active' && bookingDetail!.booking.status === 'active'"
@@ -921,7 +979,7 @@ function openDetailFromPanel(id: string) {
                 <tbody>
                   <tr v-for="svc in bookingDetail.extra_services" :key="svc.id">
                     <td>{{ svc.name }}</td>
-                    <td>₭{{ formatPrice(svc.amount) }}</td>
+                    <td>{{ settingsStore.formatPrice(svc.amount) }}</td>
                     <td>
                       <button class="btn btn-xs btn-ghost btn-error" @click="handleRemoveExtraService(svc.id)">
                         {{ t("adminBookings.removeService") }}
@@ -1026,7 +1084,7 @@ function openDetailFromPanel(id: string) {
               <span>{{ t("adminBookings.createdBy") }}: <span class="text-base-content/60">{{ bookingDetail.booking.created_by_name || "—" }}</span></span>
               <span>{{ t("adminBookings.lastEditedBy") }}: <span class="text-base-content/60">{{ bookingDetail.booking.updated_by_name || "—" }}</span></span>
             </div>
-            <span class="text-lg font-bold">₭{{ formatPrice(computeTotal(bookingDetail)) }}</span>
+            <span class="text-lg font-bold">{{ settingsStore.formatPrice(computeTotal(bookingDetail)) }}</span>
           </div>
         </div>
       </div>
@@ -1123,7 +1181,7 @@ function openDetailFromPanel(id: string) {
                   {{ room.room_name }}
                 </div>
                 <div class="text-xs mt-1 font-medium" :class="form.room_ids.includes(room.id) ? 'opacity-90' : ''">
-                  ₭{{ formatPrice(room.price) }}
+                  {{ settingsStore.formatPrice(room.price) }}
                 </div>
               </button>
             </div>
@@ -1161,7 +1219,7 @@ function openDetailFromPanel(id: string) {
               </label>
             </div>
             <div v-if="form.discount_mode !== 'none'" class="flex items-center gap-2">
-              <span class="text-sm text-base-content/50">{{ form.discount_mode === "percentage" ? "%" : "₭" }}</span>
+              <span class="text-sm text-base-content/50">{{ form.discount_mode === "percentage" ? "%" : settingsStore.priceSymbol }}</span>
               <input
                 v-model.number="form.discount_value"
                 type="number"
@@ -1266,32 +1324,64 @@ function openDetailFromPanel(id: string) {
           </form>
         </div>
         <div class="overflow-y-auto flex-1">
-          <div v-if="statPanelBookings.length === 0" class="py-8 text-center text-sm text-base-content/40">
-            {{ t("adminBookings.noBookings") }}
-          </div>
-          <div v-else class="flex flex-col gap-2">
-            <button
-              v-for="b in statPanelBookings"
-              :key="b.id"
-              class="w-full text-left card card-compact card-bordered hover:bg-base-200 transition-colors"
-              @click="openDetailFromPanel(b.id)"
-            >
-              <div class="card-body">
-                <div class="flex items-center justify-between gap-2">
-                  <span class="font-mono text-xs font-semibold badge badge-ghost">{{ b.booking_ref }}</span>
-                  <span :class="['badge badge-sm', b.payment_status === 'paid' ? 'badge-success' : 'badge-warning']">
-                    {{ b.payment_status === 'paid' ? t('adminBookings.paid') : t('adminBookings.unpaid') }}
-                  </span>
-                </div>
-                <p class="text-sm font-medium">{{ b.customer_name || "—" }}</p>
-                <p class="text-xs text-base-content/40">{{ formatDate(b.check_in) }} → {{ formatDate(b.check_out) }}</p>
+          <!-- Available panel: compact room grid -->
+          <template v-if="statPanel.type === 'available'">
+            <div v-if="statPanelRooms.length === 0" class="py-8 text-center text-sm text-base-content/40">
+              {{ t("adminBookings.noRooms") }}
+            </div>
+            <template v-else>
+              <!-- Legend -->
+              <div class="flex items-center gap-4 mb-3 text-xs text-base-content/50">
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-emerald-400 inline-block"></span>{{ t('adminBookings.roomStatusAvailable') }}</span>
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-amber-400 inline-block"></span>{{ t('adminBookings.roomStatusOccupied') }}</span>
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-base-300 inline-block"></span>{{ t('adminBookings.roomStatusDisabled') }}</span>
               </div>
-            </button>
-          </div>
+              <!-- Grid -->
+              <div class="grid grid-cols-4 gap-2">
+                <div
+                  v-for="room in [...statPanelRooms].sort((a,b) => a.roomStatus === b.roomStatus ? 0 : a.roomStatus === 'available' ? -1 : b.roomStatus === 'available' ? 1 : a.roomStatus === 'occupied' ? -1 : 1)"
+                  :key="room.id"
+                  :class="[
+                    'aspect-square rounded-lg border-2 flex flex-col items-center justify-center p-1 text-center',
+                    room.roomStatus === 'available' ? 'bg-emerald-50 border-emerald-300 text-emerald-900' :
+                    room.roomStatus === 'occupied'  ? 'bg-amber-50  border-amber-300  text-amber-900'  :
+                                                      'bg-base-200  border-base-300   text-base-content/30'
+                  ]"
+                >
+                  <span class="text-lg font-bold leading-none">{{ room.room_number }}</span>
+                  <span class="text-[0.6rem] leading-tight mt-0.5 line-clamp-2 px-0.5">{{ room.room_name }}</span>
+                </div>
+              </div>
+            </template>
+          </template>
+          <!-- Other panels: show booking cards -->
+          <template v-else>
+            <div v-if="statPanelBookings.length === 0" class="py-8 text-center text-sm text-base-content/40">
+              {{ t("adminBookings.noBookings") }}
+            </div>
+            <div v-else class="flex flex-col gap-2">
+              <button
+                v-for="b in statPanelBookings"
+                :key="b.id"
+                class="w-full text-left card card-compact card-bordered hover:bg-base-200 transition-colors"
+                @click="openDetailFromPanel(b.id)"
+              >
+                <div class="card-body">
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="font-mono text-xs font-semibold badge badge-ghost">{{ b.booking_ref }}</span>
+                    <span :class="['badge badge-sm', b.payment_status === 'paid' ? 'badge-success' : 'badge-warning']">
+                      {{ b.payment_status === 'paid' ? t('adminBookings.paid') : t('adminBookings.unpaid') }}
+                    </span>
+                  </div>
+                  <p class="text-sm font-medium">{{ b.customer_name || "—" }}</p>
+                  <p class="text-xs text-base-content/40">{{ settingsStore.formatDate(b.check_in) }} → {{ settingsStore.formatDate(b.check_out) }}</p>
+                </div>
+              </button>
+            </div>
+          </template>
         </div>
       </div>
       <form method="dialog" class="modal-backdrop"><button>close</button></form>
     </dialog>
   </AppShell>
 </template>
-

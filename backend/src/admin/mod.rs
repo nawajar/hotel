@@ -1,4 +1,5 @@
 mod rooms;
+mod settings;
 mod users;
 
 use axum::{routing::get, Json, Router};
@@ -16,4 +17,5 @@ pub fn router() -> Router<AppState> {
         .nest("/translations", translations::admin_router())
         .nest("/users", users::admin_router())
         .nest("/rooms", rooms::admin_router())
+        .nest("/settings", settings::admin_router())
 }

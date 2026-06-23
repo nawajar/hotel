@@ -41,7 +41,14 @@
     "description": "Admin-only area.",
     "pingButton": "Ping /api/admin/ping",
     "pingOk": "ok: {ok}",
-    "pingError": "error {status}: {message}"
+    "pingError": "error {status}: {message}",
+    "settingsTitle": "General Settings",
+    "settingsTimezone": "Timezone",
+    "settingsPriceSymbol": "Price Symbol",
+    "settingsSave": "Save",
+    "settingsSaved": "Saved",
+    "settingsError": "Failed to save settings.",
+    "settingsInvalidTimezone": "Invalid timezone."
   },
   "adminTranslations": {
     "title": "Translations",
@@ -210,7 +217,11 @@
     "actualCheckIn": "Actual Check-in",
     "actualCheckOut": "Actual Check-out",
     "checkInAction": "Check In",
-    "checkOutAction": "Check Out"
+    "checkOutAction": "Check Out",
+    "roomStatusAvailable": "Available",
+    "roomStatusOccupied": "Occupied",
+    "roomStatusDisabled": "Disabled",
+    "noRooms": "No rooms found."
   },
   "dailyReport": {
     "date": "Paid Date",
