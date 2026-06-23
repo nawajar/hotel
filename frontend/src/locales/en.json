@@ -149,6 +149,7 @@
     "saved": "Booking saved.",
     "added": "Booking created.",
     "genericError": "Something went wrong. Please try again.",
+    "roomsAlreadyBooked": "Rooms already booked for this period: {rooms}",
     "emptyState": "No bookings found.",
     "incomeSummary": "Income Summary",
     "year": "Year",

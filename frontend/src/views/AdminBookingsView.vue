@@ -354,7 +354,17 @@ async function handleSubmit() {
     }
     formDialogVisible.value = false;
   } catch (err) {
-    errorMessage.value = err instanceof ApiError ? err.message : t("adminBookings.genericError");
+    if (err instanceof ApiError) {
+      const prefix = "rooms already booked for this period:";
+      if (err.message.toLowerCase().startsWith(prefix)) {
+        const rooms = err.message.slice(prefix.length).trim();
+        errorMessage.value = t("adminBookings.roomsAlreadyBooked", { rooms });
+      } else {
+        errorMessage.value = err.message;
+      }
+    } else {
+      errorMessage.value = t("adminBookings.genericError");
+    }
   }
 }
 
