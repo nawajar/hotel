@@ -41,7 +41,14 @@
     "description": "พื้นที่สำหรับผู้ดูแลระบบเท่านั้น",
     "pingButton": "ทดสอบ /api/admin/ping",
     "pingOk": "สำเร็จ: {ok}",
-    "pingError": "ข้อผิดพลาด {status}: {message}"
+    "pingError": "ข้อผิดพลาด {status}: {message}",
+    "settingsTitle": "ตั้งค่าทั่วไป",
+    "settingsTimezone": "เขตเวลา",
+    "settingsPriceSymbol": "สัญลักษณ์สกุลเงิน",
+    "settingsSave": "บันทึก",
+    "settingsSaved": "บันทึกแล้ว",
+    "settingsError": "ไม่สามารถบันทึกการตั้งค่าได้",
+    "settingsInvalidTimezone": "เขตเวลาไม่ถูกต้อง"
   },
   "adminTranslations": {
     "title": "คำแปล",
@@ -216,7 +223,11 @@
     "actualCheckIn": "เวลาเช็คอินจริง",
     "actualCheckOut": "เวลาเช็คเอาต์จริง",
     "checkInAction": "เช็คอิน",
-    "checkOutAction": "เช็คเอาต์"
+    "checkOutAction": "เช็คเอาต์",
+    "roomStatusAvailable": "ว่าง",
+    "roomStatusOccupied": "มีผู้เข้าพัก",
+    "roomStatusDisabled": "ปิดใช้งาน",
+    "noRooms": "ไม่พบห้องพัก"
   },
   "dailyReport": {
     "date": "วันที่ชำระ",

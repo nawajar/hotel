@@ -41,7 +41,14 @@
     "description": "ພື້ນທີ່ສະເພາະຜູ້ບໍລິຫານ.",
     "pingButton": "ທົດສອບ /api/admin/ping",
     "pingOk": "ສຳເລັດ: {ok}",
-    "pingError": "ຜິດພາດ {status}: {message}"
+    "pingError": "ຜິດພາດ {status}: {message}",
+    "settingsTitle": "ການຕັ້ງຄ່າທົ່ວໄປ",
+    "settingsTimezone": "ເຂດເວລາ",
+    "settingsPriceSymbol": "ສັນຍາລັກສະກຸນເງິນ",
+    "settingsSave": "ບັນທຶກ",
+    "settingsSaved": "ບັນທຶກແລ້ວ",
+    "settingsError": "ບໍ່ສາມາດບັນທຶກການຕັ້ງຄ່າໄດ້",
+    "settingsInvalidTimezone": "ເຂດເວລາບໍ່ຖືກຕ້ອງ"
   },
   "adminTranslations": {
     "title": "ການແປພາສາ",
@@ -210,7 +217,11 @@
     "actualCheckIn": "ເວລາເຊັກອິນຕົວຈິງ",
     "actualCheckOut": "ເວລາເຊັກເອົາທ໌ຕົວຈິງ",
     "checkInAction": "ເຊັກອິນ",
-    "checkOutAction": "ເຊັກເອົາທ໌"
+    "checkOutAction": "ເຊັກເອົາທ໌",
+    "roomStatusAvailable": "ຫ້ອງວ່າງ",
+    "roomStatusOccupied": "ມີຜູ້ພັກ",
+    "roomStatusDisabled": "ປິດໃຊ້ງານ",
+    "noRooms": "ບໍ່ພົບຫ້ອງພັກ"
   },
   "dailyReport": {
     "date": "ວັນທີຊຳລະ",
