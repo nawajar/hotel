@@ -1,0 +1,27 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "update bookings\n               set check_in        = $2,\n                   check_out       = $3,\n                   note            = $4,\n                   discount_type   = $5,\n                   discount_value  = $6,\n                   payment_status  = $7,\n                   paid_at         = case when $7 = 'paid' then coalesce(paid_at, now()) else null end,\n                   payment_method  = $8,\n                   deposit_amount  = $9,\n                   customer_name   = $10,\n                   customer_phone  = $11,\n                   customer_id_type    = $12,\n                   customer_id_number  = $13,\n                   updated_by      = $14,\n                   updated_at      = now()\n               where id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Timestamptz",
+        "Timestamptz",
+        "Text",
+        "Text",
+        "Float8",
+        "Text",
+        "Text",
+        "Float8",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "3910ae3222b3db2adea634869a92ab7c2c573fa7205b17e414b01f58db14450c"
+}

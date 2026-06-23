@@ -3,6 +3,8 @@ use sqlx::PgPool;
 use time::OffsetDateTime;
 use uuid::Uuid;
 
+use crate::error::AppError;
+
 #[derive(Debug, Clone, Serialize)]
 pub struct CalendarBookingRoom {
     pub id: Uuid,
@@ -16,7 +18,6 @@ pub struct CalendarBooking {
     pub booking_ref: String,
     pub status: String,
     pub payment_status: String,
-    pub label: Option<String>,
     #[serde(with = "time::serde::rfc3339")]
     pub check_in: OffsetDateTime,
     #[serde(with = "time::serde::rfc3339")]
@@ -42,7 +43,6 @@ pub struct TodaySummary {
     pub occupied_now: i64,
     pub check_ins_today: i64,
     pub check_outs_today: i64,
-    pub needs_attention: i64,
     pub unpaid_active: i64,
 }
 
@@ -77,6 +77,7 @@ pub struct Booking {
     pub booking_ref: String,
     pub status: String,
     pub payment_status: String,
+    pub payment_method: Option<String>,
     #[serde(with = "time::serde::rfc3339")]
     pub check_in: OffsetDateTime,
     #[serde(with = "time::serde::rfc3339")]
@@ -97,6 +98,29 @@ pub struct Booking {
     pub updated_by: Uuid,
     pub created_by_name: String,
     pub updated_by_name: String,
+    pub deposit_amount: Option<f64>,
+    pub deposit_returned: bool,
+    #[serde(
+        with = "time::serde::rfc3339::option",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub deposit_returned_at: Option<OffsetDateTime>,
+    pub deposit_returned_by: Option<Uuid>,
+    #[serde(
+        with = "time::serde::rfc3339::option",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub paid_at: Option<OffsetDateTime>,
+    #[serde(
+        with = "time::serde::rfc3339::option",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub actual_check_in: Option<OffsetDateTime>,
+    #[serde(
+        with = "time::serde::rfc3339::option",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub actual_check_out: Option<OffsetDateTime>,
 }
 
 #[derive(Debug, Clone, Serialize, sqlx::FromRow)]
@@ -112,6 +136,7 @@ pub struct BookingDocument {
     pub uploaded_by_name: String,
     #[serde(with = "time::serde::rfc3339")]
     pub created_at: OffsetDateTime,
+    pub category: String,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -122,7 +147,7 @@ pub struct BookingDetail {
     pub documents: Vec<BookingDocument>,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, sqlx::FromRow)]
 pub struct IncomeSummaryRow {
     pub period: String,
     pub booking_count: i64,
@@ -132,7 +157,7 @@ pub struct IncomeSummaryRow {
     pub net_revenue: f64,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, sqlx::FromRow)]
 pub struct IncomeDetailRow {
     pub booking_ref: String,
     pub customer_name: Option<String>,
@@ -143,6 +168,43 @@ pub struct IncomeDetailRow {
     pub net_revenue: f64,
 }
 
+#[derive(Debug, Clone, Serialize, sqlx::FromRow)]
+pub struct DailyReportRow {
+    pub date: String,
+    pub booking_count: i64,
+    pub cash_revenue: f64,
+    pub bank_transfer_revenue: f64,
+    pub unspecified_revenue: f64,
+    pub total_revenue: f64,
+    pub cumulative_total: f64,
+    pub deposit_held_count: i64,
+    pub deposit_held_amount: f64,
+    pub unpaid_count: i64,
+    pub unpaid_amount: f64,
+}
+
+#[derive(Debug, Clone, Serialize, sqlx::FromRow)]
+pub struct DailyReportDetailRow {
+    pub record_type: String, // "paid" | "unpaid"
+    pub booking_ref: String,
+    pub customer_name: Option<String>,
+    #[serde(with = "time::serde::rfc3339")]
+    pub check_in: OffsetDateTime,
+    #[serde(with = "time::serde::rfc3339")]
+    pub check_out: OffsetDateTime,
+    pub payment_method: Option<String>,
+    pub rooms: String,
+    pub net_revenue: f64,
+    pub deposit_amount: Option<f64>,
+    pub deposit_returned: bool,
+}
+
+#[derive(Debug, Clone, Serialize, sqlx::FromRow)]
+pub struct DepositSummary {
+    pub count: i64,
+    pub total_amount: f64,
+}
+
 impl Booking {
     pub async fn calendar_list(
         pool: &PgPool,
@@ -150,7 +212,7 @@ impl Booking {
         end: OffsetDateTime,
     ) -> Result<Vec<CalendarBooking>, sqlx::Error> {
         let rows = sqlx::query!(
-            r#"select b.id, b.booking_ref, b.status, b.payment_status, b.label,
+            r#"select b.id, b.booking_ref, b.status, b.payment_status,
                       b.check_in, b.check_out, b.customer_name, b.note,
                       br.room_id as "room_id?", br.room_number as "room_number?", br.room_name as "room_name?"
                from bookings b
@@ -173,7 +235,6 @@ impl Booking {
                     booking_ref: row.booking_ref,
                     status: row.status,
                     payment_status: row.payment_status,
-                    label: row.label,
                     check_in: row.check_in,
                     check_out: row.check_out,
                     customer_name: row.customer_name,
@@ -201,13 +262,15 @@ impl Booking {
     pub async fn list_all(pool: &PgPool) -> Result<Vec<Booking>, sqlx::Error> {
         sqlx::query_as!(
             Booking,
-            r#"select b.id, b.booking_ref, b.status, b.payment_status,
+            r#"select b.id, b.booking_ref, b.status, b.payment_status, b.payment_method,
                       b.check_in, b.check_out, b.label, b.note,
                       b.discount_type, b.discount_value,
                       b.customer_name, b.customer_phone, b.customer_id_type, b.customer_id_number,
                       b.created_at, b.created_by, b.updated_at, b.updated_by,
                       coalesce(uc.name, '') as "created_by_name!",
-                      coalesce(uu.name, '') as "updated_by_name!"
+                      coalesce(uu.name, '') as "updated_by_name!",
+                      b.deposit_amount, b.deposit_returned, b.deposit_returned_at, b.deposit_returned_by,
+                      b.paid_at, b.actual_check_in, b.actual_check_out
                from bookings b
                left join users uc on uc.id = b.created_by
                left join users uu on uu.id = b.updated_by
@@ -220,13 +283,15 @@ impl Booking {
     pub async fn find_by_id(pool: &PgPool, id: Uuid) -> Result<Option<BookingDetail>, sqlx::Error> {
         let booking = sqlx::query_as!(
             Booking,
-            r#"select b.id, b.booking_ref, b.status, b.payment_status,
+            r#"select b.id, b.booking_ref, b.status, b.payment_status, b.payment_method,
                       b.check_in, b.check_out, b.label, b.note,
                       b.discount_type, b.discount_value,
                       b.customer_name, b.customer_phone, b.customer_id_type, b.customer_id_number,
                       b.created_at, b.created_by, b.updated_at, b.updated_by,
                       coalesce(uc.name, '') as "created_by_name!",
-                      coalesce(uu.name, '') as "updated_by_name!"
+                      coalesce(uu.name, '') as "updated_by_name!",
+                      b.deposit_amount, b.deposit_returned, b.deposit_returned_at, b.deposit_returned_by,
+                      b.paid_at, b.actual_check_in, b.actual_check_out
                from bookings b
                left join users uc on uc.id = b.created_by
                left join users uu on uu.id = b.updated_by
@@ -326,11 +391,12 @@ impl Booking {
         check_out: OffsetDateTime,
         room_ids: &[Uuid],
         booking_ref: &str,
-        label: Option<&str>,
         note: Option<&str>,
         discount_type: Option<&str>,
         discount_value: Option<f64>,
         payment_status: &str,
+        payment_method: Option<&str>,
+        deposit_amount: Option<f64>,
         customer_name: Option<&str>,
         customer_phone: Option<&str>,
         customer_id_type: Option<&str>,
@@ -341,22 +407,25 @@ impl Booking {
 
         let booking_id = sqlx::query_scalar!(
             r#"insert into bookings
-                   (booking_ref, check_in, check_out, label, note,
+                   (booking_ref, check_in, check_out, note,
                     discount_type, discount_value, payment_status, paid_at,
+                    payment_method, deposit_amount,
                     customer_name, customer_phone, customer_id_type, customer_id_number,
                     created_by, updated_by)
-               values ($1, $2, $3, $4, $5, $6, $7, $8,
-                       case when $8 = 'paid' then now() else null end,
-                       $9, $10, $11, $12, $13, $13)
+               values ($1, $2, $3, $4, $5, $6, $7,
+                       case when $7 = 'paid' then now() else null end,
+                       $8, $9,
+                       $10, $11, $12, $13, $14, $14)
                returning id"#,
             booking_ref,
             check_in,
             check_out,
-            label,
             note,
             discount_type,
             discount_value,
             payment_status,
+            payment_method,
+            deposit_amount,
             customer_name,
             customer_phone,
             customer_id_type,
@@ -402,11 +471,12 @@ impl Booking {
         id: Uuid,
         check_in: OffsetDateTime,
         check_out: OffsetDateTime,
-        label: Option<&str>,
         note: Option<&str>,
         discount_type: Option<&str>,
         discount_value: Option<f64>,
         payment_status: &str,
+        payment_method: Option<&str>,
+        deposit_amount: Option<f64>,
         customer_name: Option<&str>,
         customer_phone: Option<&str>,
         customer_id_type: Option<&str>,
@@ -417,27 +487,29 @@ impl Booking {
             r#"update bookings
                set check_in        = $2,
                    check_out       = $3,
-                   label           = $4,
-                   note            = $5,
-                   discount_type   = $6,
-                   discount_value  = $7,
-                   payment_status  = $8,
-                   paid_at         = case when $8 = 'paid' then coalesce(paid_at, now()) else null end,
-                   customer_name   = $9,
-                   customer_phone  = $10,
-                   customer_id_type    = $11,
-                   customer_id_number  = $12,
-                   updated_by      = $13,
+                   note            = $4,
+                   discount_type   = $5,
+                   discount_value  = $6,
+                   payment_status  = $7,
+                   paid_at         = case when $7 = 'paid' then coalesce(paid_at, now()) else null end,
+                   payment_method  = $8,
+                   deposit_amount  = $9,
+                   customer_name   = $10,
+                   customer_phone  = $11,
+                   customer_id_type    = $12,
+                   customer_id_number  = $13,
+                   updated_by      = $14,
                    updated_at      = now()
                where id = $1"#,
             id,
             check_in,
             check_out,
-            label,
             note,
             discount_type,
             discount_value,
             payment_status,
+            payment_method,
+            deposit_amount,
             customer_name,
             customer_phone,
             customer_id_type,
@@ -453,6 +525,94 @@ impl Booking {
         }
 
         Self::find_by_id(pool, id).await
+    }
+
+    pub async fn return_deposit(
+        pool: &PgPool,
+        booking_id: Uuid,
+        returned_by: Uuid,
+    ) -> Result<Option<BookingDetail>, sqlx::Error> {
+        let rows_affected = sqlx::query!(
+            r#"update bookings
+               set deposit_returned    = true,
+                   deposit_returned_at = now(),
+                   deposit_returned_by = $2,
+                   updated_by          = $2,
+                   updated_at          = now()
+               where id = $1 and deposit_returned = false"#,
+            booking_id,
+            returned_by
+        )
+        .execute(pool)
+        .await?
+        .rows_affected();
+
+        if rows_affected == 0 {
+            // Either not found or already returned — fetch anyway to disambiguate at handler level
+            return Self::find_by_id(pool, booking_id).await;
+        }
+
+        Self::find_by_id(pool, booking_id).await
+    }
+
+    pub async fn record_check_in(
+        pool: &PgPool,
+        booking_id: Uuid,
+        updated_by: Uuid,
+    ) -> Result<Option<BookingDetail>, AppError> {
+        let rows_affected = sqlx::query!(
+            r#"update bookings
+               set actual_check_in = now(),
+                   updated_by      = $2,
+                   updated_at      = now()
+               where id = $1 and status = 'active' and actual_check_in is null"#,
+            booking_id,
+            updated_by
+        )
+        .execute(pool)
+        .await?
+        .rows_affected();
+
+        if rows_affected == 0 {
+            let existing = Self::find_by_id(pool, booking_id).await?;
+            if existing.is_none() {
+                return Ok(None);
+            }
+            return Err(AppError::Conflict("booking cannot be checked in".into()));
+        }
+
+        Ok(Self::find_by_id(pool, booking_id).await?)
+    }
+
+    pub async fn record_check_out(
+        pool: &PgPool,
+        booking_id: Uuid,
+        updated_by: Uuid,
+    ) -> Result<Option<BookingDetail>, AppError> {
+        let rows_affected = sqlx::query!(
+            r#"update bookings
+               set actual_check_out = now(),
+                   updated_by       = $2,
+                   updated_at       = now()
+               where id = $1 and status = 'active' and actual_check_in is not null and actual_check_out is null"#,
+            booking_id,
+            updated_by
+        )
+        .execute(pool)
+        .await?
+        .rows_affected();
+
+        if rows_affected == 0 {
+            let existing = Self::find_by_id(pool, booking_id).await?;
+            if existing.is_none() {
+                return Ok(None);
+            }
+            return Err(AppError::Conflict(
+                "booking cannot be checked out before check-in".into(),
+            ));
+        }
+
+        Ok(Self::find_by_id(pool, booking_id).await?)
     }
 
     pub async fn cancel(
@@ -730,6 +890,197 @@ impl Booking {
             .collect())
     }
 
+    pub async fn daily_report(
+        pool: &PgPool,
+        year: i32,
+        month: i32,
+    ) -> Result<Vec<DailyReportRow>, sqlx::Error> {
+        sqlx::query_as::<_, DailyReportRow>(
+            r#"with room_totals as (
+                 select br.booking_id, sum(br.price_snapshot) as room_rev
+                 from booking_rooms br where br.status = 'active' group by br.booking_id
+               ),
+               extra_totals as (
+                 select bes.booking_id, sum(bes.amount)::float8 as extra_rev
+                 from booking_extra_services bes group by bes.booking_id
+               ),
+               net_amount as (
+                 select
+                   b.paid_at,
+                   b.created_at,
+                   b.payment_method,
+                   b.deposit_amount,
+                   b.deposit_returned,
+                   (coalesce(rt.room_rev, 0) + coalesce(et.extra_rev, 0) -
+                    case b.discount_type
+                      when 'amount' then least(b.discount_value, coalesce(rt.room_rev, 0) + coalesce(et.extra_rev, 0))
+                      when 'percentage' then (coalesce(rt.room_rev, 0) + coalesce(et.extra_rev, 0)) * b.discount_value / 100.0
+                      else 0
+                    end)::float8 as net_rev
+                 from bookings b
+                 left join room_totals rt on rt.booking_id = b.id
+                 left join extra_totals et on et.booking_id = b.id
+                 where b.status = 'active'
+                   and (
+                     (b.paid_at is not null
+                       and extract(year from b.paid_at) = $1
+                       and extract(month from b.paid_at) = $2)
+                     or
+                     (b.paid_at is null
+                       and extract(year from b.created_at) = $1
+                       and extract(month from b.created_at) = $2)
+                   )
+               ),
+               paid_daily as (
+                 select
+                   to_char(paid_at, 'YYYY-MM-DD') as day,
+                   count(*)::int8 as booking_count,
+                   coalesce(sum(net_rev) filter (where payment_method = 'cash'), 0)::float8 as cash_revenue,
+                   coalesce(sum(net_rev) filter (where payment_method = 'bank_transfer'), 0)::float8 as bank_transfer_revenue,
+                   coalesce(sum(net_rev) filter (where payment_method is null), 0)::float8 as unspecified_revenue,
+                   coalesce(sum(net_rev), 0)::float8 as total_revenue,
+                   count(*) filter (where deposit_amount is not null and deposit_amount > 0 and deposit_returned = false)::int8 as deposit_held_count,
+                   coalesce(sum(deposit_amount) filter (where deposit_amount is not null and deposit_amount > 0 and deposit_returned = false), 0)::float8 as deposit_held_amount
+                 from net_amount
+                 where paid_at is not null
+                 group by day
+               ),
+               unpaid_daily as (
+                 select
+                   to_char(created_at, 'YYYY-MM-DD') as day,
+                   count(*)::int8 as unpaid_count,
+                   coalesce(sum(net_rev), 0)::float8 as unpaid_amount,
+                   count(*) filter (where deposit_amount is not null and deposit_amount > 0 and deposit_returned = false)::int8 as deposit_held_count,
+                   coalesce(sum(deposit_amount) filter (where deposit_amount is not null and deposit_amount > 0 and deposit_returned = false), 0)::float8 as deposit_held_amount
+                 from net_amount
+                 where paid_at is null
+                 group by day
+               ),
+               all_days as (
+                 select day from paid_daily
+                 union
+                 select day from unpaid_daily
+               ),
+               daily as (
+                 select
+                   a.day,
+                   coalesce(p.booking_count, 0)::int8 as booking_count,
+                   coalesce(p.cash_revenue, 0)::float8 as cash_revenue,
+                   coalesce(p.bank_transfer_revenue, 0)::float8 as bank_transfer_revenue,
+                   coalesce(p.unspecified_revenue, 0)::float8 as unspecified_revenue,
+                   coalesce(p.total_revenue, 0)::float8 as total_revenue,
+                   (coalesce(p.deposit_held_count, 0) + coalesce(u.deposit_held_count, 0))::int8 as deposit_held_count,
+                   (coalesce(p.deposit_held_amount, 0) + coalesce(u.deposit_held_amount, 0))::float8 as deposit_held_amount,
+                   coalesce(u.unpaid_count, 0)::int8 as unpaid_count,
+                   coalesce(u.unpaid_amount, 0)::float8 as unpaid_amount
+                 from all_days a
+                 left join paid_daily p on p.day = a.day
+                 left join unpaid_daily u on u.day = a.day
+               )
+               select
+                 day as date,
+                 booking_count,
+                 cash_revenue,
+                 bank_transfer_revenue,
+                 unspecified_revenue,
+                 total_revenue,
+                 deposit_held_count,
+                 deposit_held_amount,
+                 unpaid_count,
+                 unpaid_amount,
+                 sum(total_revenue) over (order by day rows between unbounded preceding and current row)::float8 as cumulative_total
+               from daily
+               order by day asc"#,
+        )
+        .bind(year as i64)
+        .bind(month as i64)
+        .fetch_all(pool)
+        .await
+    }
+
+    pub async fn daily_report_detail(
+        pool: &PgPool,
+        year: i32,
+        month: i32,
+        day: i32,
+    ) -> Result<Vec<DailyReportDetailRow>, sqlx::Error> {
+        sqlx::query_as::<_, DailyReportDetailRow>(
+            r#"with bra as (
+                 select br.booking_id,
+                        string_agg(r.room_number, ', ' order by r.room_number) as rooms,
+                        sum(br.price_snapshot) as room_rev
+                 from booking_rooms br
+                 join rooms r on r.id = br.room_id
+                 where br.status = 'active'
+                 group by br.booking_id
+               ),
+               ea as (
+                 select booking_id, sum(amount)::float8 as extra_rev
+                 from booking_extra_services
+                 group by booking_id
+               ),
+               net as (
+                 select
+                   b.id, b.booking_ref, b.customer_name, b.check_in, b.check_out,
+                   b.payment_method, b.paid_at, b.created_at,
+                   b.deposit_amount, b.deposit_returned,
+                   coalesce(bra.rooms, '') as rooms,
+                   (coalesce(bra.room_rev, 0) + coalesce(ea.extra_rev, 0) -
+                    case b.discount_type
+                      when 'amount' then least(b.discount_value, coalesce(bra.room_rev, 0) + coalesce(ea.extra_rev, 0))
+                      when 'percentage' then (coalesce(bra.room_rev, 0) + coalesce(ea.extra_rev, 0)) * b.discount_value / 100.0
+                      else 0
+                    end)::float8 as net_revenue
+                 from bookings b
+                 left join bra on bra.booking_id = b.id
+                 left join ea on ea.booking_id = b.id
+                 where b.status = 'active'
+               )
+               -- paid bookings: grouped by paid_at date
+               select
+                 'paid' as record_type,
+                 booking_ref, customer_name, check_in, check_out,
+                 payment_method, rooms, net_revenue, deposit_amount, deposit_returned
+               from net
+               where paid_at is not null
+                 and extract(year from paid_at) = $1
+                 and extract(month from paid_at) = $2
+                 and extract(day from paid_at) = $3
+               union all
+               -- unpaid bookings: grouped by created_at date (still unpaid now)
+               select
+                 'unpaid' as record_type,
+                 booking_ref, customer_name, check_in, check_out,
+                 payment_method, rooms, net_revenue, deposit_amount, deposit_returned
+               from net
+               where paid_at is null
+                 and extract(year from created_at) = $1
+                 and extract(month from created_at) = $2
+                 and extract(day from created_at) = $3
+               order by record_type asc, check_in asc"#,
+        )
+        .bind(year as i64)
+        .bind(month as i64)
+        .bind(day as i64)
+        .fetch_all(pool)
+        .await
+    }
+
+    pub async fn unreturned_deposit_summary(pool: &PgPool) -> Result<DepositSummary, sqlx::Error> {
+        sqlx::query_as::<_, DepositSummary>(
+            r#"select
+                 count(*)::int8 as count,
+                 coalesce(sum(deposit_amount), 0)::float8 as total_amount
+               from bookings
+               where status = 'active'
+                 and deposit_amount is not null
+                 and deposit_amount > 0
+                 and deposit_returned = false"#,
+        )
+        .fetch_one(pool)
+        .await
+    }
+
     pub async fn room_availability(
         pool: &PgPool,
         check_in: OffsetDateTime,
@@ -805,13 +1156,6 @@ impl Booking {
         .await?
         .unwrap_or(0);
 
-        let needs_attention = sqlx::query_scalar!(
-            "select count(*) from bookings where status = 'active' and label = 'needs_attention'"
-        )
-        .fetch_one(pool)
-        .await?
-        .unwrap_or(0);
-
         let unpaid_active = sqlx::query_scalar!(
             "select count(*) from bookings where status = 'active' and payment_status = 'unpaid'"
         )
@@ -825,10 +1169,10 @@ impl Booking {
             occupied_now: total_rooms - available_now,
             check_ins_today,
             check_outs_today,
-            needs_attention,
             unpaid_active,
         })
     }
+
 }
 
 impl BookingDocument {
@@ -840,7 +1184,7 @@ impl BookingDocument {
             BookingDocument,
             r#"select d.id, d.booking_id, d.filename, d.stored_name, d.mime_type, d.size,
                       d.uploaded_by, coalesce(u.name, '') as "uploaded_by_name!",
-                      d.created_at
+                      d.created_at, d.category
                from booking_documents d
                left join users u on u.id = d.uploaded_by
                where d.booking_id = $1
@@ -856,7 +1200,7 @@ impl BookingDocument {
             BookingDocument,
             r#"select d.id, d.booking_id, d.filename, d.stored_name, d.mime_type, d.size,
                       d.uploaded_by, coalesce(u.name, '') as "uploaded_by_name!",
-                      d.created_at
+                      d.created_at, d.category
                from booking_documents d
                left join users u on u.id = d.uploaded_by
                where d.id = $1"#,
@@ -874,17 +1218,19 @@ impl BookingDocument {
         mime_type: &str,
         size: i64,
         uploaded_by: Uuid,
+        category: &str,
     ) -> Result<BookingDocument, sqlx::Error> {
         let id = sqlx::query_scalar!(
-            r#"insert into booking_documents (booking_id, filename, stored_name, mime_type, size, uploaded_by)
-               values ($1, $2, $3, $4, $5, $6)
+            r#"insert into booking_documents (booking_id, filename, stored_name, mime_type, size, uploaded_by, category)
+               values ($1, $2, $3, $4, $5, $6, $7)
                returning id"#,
             booking_id,
             filename,
             stored_name,
             mime_type,
             size,
-            uploaded_by
+            uploaded_by,
+            category
         )
         .fetch_one(pool)
         .await?;

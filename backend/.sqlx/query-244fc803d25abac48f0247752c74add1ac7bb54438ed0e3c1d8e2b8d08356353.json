@@ -1,0 +1,182 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select b.id, b.booking_ref, b.status, b.payment_status, b.payment_method,\n                      b.check_in, b.check_out, b.label, b.note,\n                      b.discount_type, b.discount_value,\n                      b.customer_name, b.customer_phone, b.customer_id_type, b.customer_id_number,\n                      b.created_at, b.created_by, b.updated_at, b.updated_by,\n                      coalesce(uc.name, '') as \"created_by_name!\",\n                      coalesce(uu.name, '') as \"updated_by_name!\",\n                      b.deposit_amount, b.deposit_returned, b.deposit_returned_at, b.deposit_returned_by,\n                      b.paid_at, b.actual_check_in, b.actual_check_out\n               from bookings b\n               left join users uc on uc.id = b.created_by\n               left join users uu on uu.id = b.updated_by\n               order by b.check_in desc",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "booking_ref",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "status",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "payment_status",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "payment_method",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "check_in",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 6,
+        "name": "check_out",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "label",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "note",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "discount_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 10,
+        "name": "discount_value",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 11,
+        "name": "customer_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 12,
+        "name": "customer_phone",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 13,
+        "name": "customer_id_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 14,
+        "name": "customer_id_number",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 15,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 16,
+        "name": "created_by",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 17,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 18,
+        "name": "updated_by",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 19,
+        "name": "created_by_name!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 20,
+        "name": "updated_by_name!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 21,
+        "name": "deposit_amount",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 22,
+        "name": "deposit_returned",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 23,
+        "name": "deposit_returned_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 24,
+        "name": "deposit_returned_by",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 25,
+        "name": "paid_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 26,
+        "name": "actual_check_in",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 27,
+        "name": "actual_check_out",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      null,
+      null,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "244fc803d25abac48f0247752c74add1ac7bb54438ed0e3c1d8e2b8d08356353"
+}

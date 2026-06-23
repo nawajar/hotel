@@ -26,9 +26,9 @@ export interface Booking {
   booking_ref: string;
   status: "active" | "cancelled";
   payment_status: "paid" | "unpaid";
+  payment_method: "cash" | "bank_transfer" | null;
   check_in: string;
   check_out: string;
-  label: "check_in" | "check_out" | "needs_attention" | null;
   note: string | null;
   discount_type: "amount" | "percentage" | null;
   discount_value: number | null;
@@ -42,6 +42,13 @@ export interface Booking {
   updated_at: string;
   updated_by: string;
   updated_by_name: string;
+  deposit_amount: number | null;
+  deposit_returned: boolean;
+  deposit_returned_at: string | null;
+  deposit_returned_by: string | null;
+  paid_at: string | null;
+  actual_check_in: string | null;
+  actual_check_out: string | null;
 }
 
 export interface BookingDocument {
@@ -53,6 +60,7 @@ export interface BookingDocument {
   uploaded_by: string;
   uploaded_by_name: string;
   created_at: string;
+  category: string;
 }
 
 export interface BookingDetail {
@@ -69,6 +77,7 @@ export interface RoomAvailability {
   price: number;
   is_available: boolean;
 }
+
 
 export interface TodaySummary {
   total_rooms: number;
@@ -103,11 +112,12 @@ export interface CreateBookingInput {
   check_in: string;
   check_out: string;
   room_ids: string[];
-  label?: string;
   note?: string;
   discount_type?: string;
   discount_value?: number;
   payment_status?: string;
+  payment_method?: string;
+  deposit_amount?: number;
   customer_name?: string;
   customer_phone?: string;
   customer_id_type?: string;
@@ -117,15 +127,48 @@ export interface CreateBookingInput {
 export interface UpdateBookingInput {
   check_in: string;
   check_out: string;
-  label?: string;
   note?: string;
   discount_type?: string;
   discount_value?: number;
   payment_status?: string;
+  payment_method?: string;
+  deposit_amount?: number;
   customer_name?: string;
   customer_phone?: string;
   customer_id_type?: string;
   customer_id_number?: string;
+}
+
+export interface DailyReportRow {
+  date: string;
+  booking_count: number;
+  cash_revenue: number;
+  bank_transfer_revenue: number;
+  unspecified_revenue: number;
+  total_revenue: number;
+  cumulative_total: number;
+  deposit_held_count: number;
+  deposit_held_amount: number;
+  unpaid_count: number;
+  unpaid_amount: number;
+}
+
+export interface DepositSummary {
+  count: number;
+  total_amount: number;
+}
+
+export interface DailyReportDetailRow {
+  record_type: "paid" | "unpaid";
+  booking_ref: string;
+  customer_name: string | null;
+  check_in: string;
+  check_out: string;
+  payment_method: string | null;
+  rooms: string;
+  net_revenue: number;
+  deposit_amount: number | null;
+  deposit_returned: boolean;
 }
 
 export interface AddExtraServiceInput {
@@ -160,9 +203,18 @@ export const bookingsApi = {
     const params = new URLSearchParams({ check_in, check_out });
     return apiClient.get<RoomAvailability[]>(`/bookings/room-availability?${params}`);
   },
-  getTodaySummary: () => apiClient.get<TodaySummary>("/bookings/today-summary"),
-  uploadDocument: async (bookingId: string, file: File): Promise<BookingDocument> => {
+  getTodaySummary: () =>
+    apiClient.get<TodaySummary>(`/bookings/today-summary`),
+  returnDeposit: (bookingId: string) =>
+    apiClient.put<BookingDetail>(`/bookings/${bookingId}/return-deposit`),
+  checkIn: (bookingId: string) =>
+    apiClient.put<BookingDetail>(`/bookings/${bookingId}/check-in`),
+  checkOut: (bookingId: string) =>
+    apiClient.put<BookingDetail>(`/bookings/${bookingId}/check-out`),
+
+  uploadDocument: async (bookingId: string, file: File, category: string = "general"): Promise<BookingDocument> => {
     const form = new FormData();
+    form.append("category", category);
     form.append("file", file);
     const res = await fetch(`/api/bookings/${bookingId}/documents`, {
       method: "POST",
@@ -184,4 +236,14 @@ export const bookingsApi = {
     apiClient.del<void>(`/bookings/${bookingId}/documents/${docId}`),
   documentDownloadUrl: (bookingId: string, docId: string) =>
     `/api/bookings/${bookingId}/documents/${docId}`,
+  getDailyReport: (year: number, month: number) => {
+    const params = new URLSearchParams({ year: String(year), month: String(month) });
+    return apiClient.get<DailyReportRow[]>(`/bookings/daily-report?${params}`);
+  },
+  getDepositSummary: () =>
+    apiClient.get<DepositSummary>(`/bookings/deposit-summary`),
+  getDailyReportDetail: (year: number, month: number, day: number) => {
+    const params = new URLSearchParams({ year: String(year), month: String(month), day: String(day) });
+    return apiClient.get<DailyReportDetailRow[]>(`/bookings/daily-report-detail?${params}`);
+  },
 };

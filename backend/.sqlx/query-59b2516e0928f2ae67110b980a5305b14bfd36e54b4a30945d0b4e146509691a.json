@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "insert into booking_documents (booking_id, filename, stored_name, mime_type, size, uploaded_by)\n               values ($1, $2, $3, $4, $5, $6)\n               returning id",
+  "query": "insert into booking_documents (booking_id, filename, stored_name, mime_type, size, uploaded_by, category)\n               values ($1, $2, $3, $4, $5, $6, $7)\n               returning id",
   "describe": {
     "columns": [
       {
@@ -16,12 +16,13 @@
         "Text",
         "Text",
         "Int8",
-        "Uuid"
+        "Uuid",
+        "Text"
       ]
     },
     "nullable": [
       false
     ]
   },
-  "hash": "e898175e6ad482dd9618d23497f45deca103c0fd3ef37fc53857dd201b6d34b2"
+  "hash": "59b2516e0928f2ae67110b980a5305b14bfd36e54b4a30945d0b4e146509691a"
 }

@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "select d.id, d.booking_id, d.filename, d.stored_name, d.mime_type, d.size,\n                      d.uploaded_by, coalesce(u.name, '') as \"uploaded_by_name!\",\n                      d.created_at\n               from booking_documents d\n               left join users u on u.id = d.uploaded_by\n               where d.id = $1",
+  "query": "select d.id, d.booking_id, d.filename, d.stored_name, d.mime_type, d.size,\n                      d.uploaded_by, coalesce(u.name, '') as \"uploaded_by_name!\",\n                      d.created_at, d.category\n               from booking_documents d\n               left join users u on u.id = d.uploaded_by\n               where d.booking_id = $1\n               order by d.created_at asc",
   "describe": {
     "columns": [
       {
@@ -47,6 +47,11 @@
         "ordinal": 8,
         "name": "created_at",
         "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "category",
+        "type_info": "Text"
       }
     ],
     "parameters": {
@@ -63,8 +68,9 @@
       false,
       false,
       null,
+      false,
       false
     ]
   },
-  "hash": "165faa84bcaf2f4b54380f41c6d1317e2e940c18573fbaa82ef2a4ebd0debc7f"
+  "hash": "aa32c605ce2914df65d24e6134c59c82ae120e36aacbee064a028cbe167fe643"
 }

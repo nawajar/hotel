@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "update bookings\n               set actual_check_out = now(),\n                   updated_by       = $2,\n                   updated_at       = now()\n               where id = $1 and status = 'active' and actual_check_in is not null and actual_check_out is null",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "8e8ae7b546d9c615081d3b5c11502b284383f9ed2fc0c0bff9cdd88043833b2b"
+}

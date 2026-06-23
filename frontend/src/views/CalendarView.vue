@@ -49,9 +49,6 @@ const isFetching = computed(() => bookingsFetching.value);
 
 // ---- color logic ----
 function colorForBooking(b: CalendarBooking): string {
-  if (b.label === "needs_attention") return "#ef4444";
-  if (b.label === "check_in") return "#3b82f6";
-  if (b.label === "check_out") return "#a855f7";
   if (b.status === "cancelled") return "#9ca3af";
   if (b.payment_status === "paid") return "#22c55e";
   return "#f59e0b";
@@ -179,9 +176,6 @@ watch(isMobile, (mobile) => {
 
 // ---- legend entries ----
 const legendEntries = computed(() => [
-  { color: "#ef4444", label: t("calendar.legend.needsAttention") },
-  { color: "#3b82f6", label: t("calendar.legend.checkIn") },
-  { color: "#a855f7", label: t("calendar.legend.checkOut") },
   { color: "#22c55e", label: t("calendar.legend.paid") },
   { color: "#f59e0b", label: t("calendar.legend.unpaid") },
   { color: "#9ca3af", label: t("calendar.legend.cancelled") },
@@ -325,18 +319,11 @@ const legendEntries = computed(() => [
             <span class="text-gray-500 w-28 shrink-0">{{ t("calendar.paymentStatus") }}</span>
             <span>{{ selectedBooking.payment_status }}</span>
           </div>
-          <div v-if="selectedBooking.label" class="flex gap-2">
-            <span class="text-gray-500 w-28 shrink-0">{{ t("calendar.label") }}</span>
-            <span>{{ selectedBooking.label }}</span>
-          </div>
           <div v-if="selectedBooking.note" class="flex gap-2">
             <span class="text-gray-500 w-28 shrink-0">{{ t("calendar.note") }}</span>
             <span>{{ selectedBooking.note }}</span>
           </div>
-          <div class="flex gap-2">
-            <span class="text-gray-500 w-28 shrink-0">{{ t("calendar.createdAt") }}</span>
-            <span>{{ new Date(selectedBooking.created_at).toLocaleString() }}</span>
-          </div>
+          <!-- created_at not available on calendar booking summary -->
           <!-- Rooms -->
           <div v-if="selectedBooking.rooms.length > 0" class="flex gap-2">
             <span class="text-gray-500 w-28 shrink-0">{{ t("calendar.rooms") }}</span>

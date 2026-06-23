@@ -11,7 +11,6 @@ export interface CalendarBooking {
   booking_ref: string;
   status: "active" | "cancelled";
   payment_status: "paid" | "unpaid";
-  label: "check_in" | "check_out" | "needs_attention" | null;
   check_in: string;
   check_out: string;
   customer_name: string | null;

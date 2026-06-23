@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "update bookings\n               set deposit_returned    = true,\n                   deposit_returned_at = now(),\n                   deposit_returned_by = $2,\n                   updated_by          = $2,\n                   updated_at          = now()\n               where id = $1 and deposit_returned = false",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "3c7722c4306831a889a811670bf68de7d10c5bc55c1c7c01be299493092f7092"
+}

@@ -16,7 +16,8 @@ use crate::{
     error::AppError,
     models::booking::{
         Booking, BookingDetail, BookingDocument, BookingExtraService, BookingRoom,
-        IncomeDetailRow, IncomeSummaryRow, RoomAvailability, TodaySummary,
+        DailyReportDetailRow, DailyReportRow, DepositSummary, IncomeDetailRow, IncomeSummaryRow,
+        RoomAvailability, TodaySummary,
     },
     AppState,
 };
@@ -27,11 +28,12 @@ struct CreateBookingInput {
     check_out: String,
     #[validate(length(min = 1))]
     room_ids: Vec<Uuid>,
-    label: Option<String>,
     note: Option<String>,
     discount_type: Option<String>,
     discount_value: Option<f64>,
     payment_status: Option<String>,
+    payment_method: Option<String>,
+    deposit_amount: Option<f64>,
     customer_name: Option<String>,
     customer_phone: Option<String>,
     customer_id_type: Option<String>,
@@ -42,11 +44,12 @@ struct CreateBookingInput {
 struct UpdateBookingInput {
     check_in: String,
     check_out: String,
-    label: Option<String>,
     note: Option<String>,
     discount_type: Option<String>,
     discount_value: Option<f64>,
     payment_status: Option<String>,
+    payment_method: Option<String>,
+    deposit_amount: Option<f64>,
     customer_name: Option<String>,
     customer_phone: Option<String>,
     customer_id_type: Option<String>,
@@ -115,22 +118,22 @@ fn validate_discount(dt: Option<&str>, dv: Option<f64>) -> Result<(), AppError> 
     }
 }
 
-fn validate_label(label: Option<&str>) -> Result<(), AppError> {
-    if let Some(l) = label {
-        if l != "check_in" && l != "check_out" && l != "needs_attention" {
+fn validate_payment_status(ps: Option<&str>) -> Result<(), AppError> {
+    if let Some(ps) = ps {
+        if ps != "paid" && ps != "unpaid" {
             return Err(AppError::Validation(
-                "label must be 'check_in', 'check_out', or 'needs_attention'".into(),
+                "payment_status must be 'paid' or 'unpaid'".into(),
             ));
         }
     }
     Ok(())
 }
 
-fn validate_payment_status(ps: Option<&str>) -> Result<(), AppError> {
-    if let Some(ps) = ps {
-        if ps != "paid" && ps != "unpaid" {
+fn validate_payment_method(pm: Option<&str>) -> Result<(), AppError> {
+    if let Some(pm) = pm {
+        if pm != "cash" && pm != "bank_transfer" {
             return Err(AppError::Validation(
-                "payment_status must be 'paid' or 'unpaid'".into(),
+                "payment_method must be 'cash' or 'bank_transfer'".into(),
             ));
         }
     }
@@ -160,9 +163,14 @@ async fn create_booking(
         .validate()
         .map_err(|e| AppError::Validation(e.to_string()))?;
     let (check_in, check_out) = parse_and_validate_dates(&input.check_in, &input.check_out, true)?;
-    validate_label(input.label.as_deref())?;
     validate_discount(input.discount_type.as_deref(), input.discount_value)?;
     validate_payment_status(input.payment_status.as_deref())?;
+    validate_payment_method(input.payment_method.as_deref())?;
+    if let Some(da) = input.deposit_amount {
+        if da < 0.0 {
+            return Err(AppError::Validation("deposit_amount must be >= 0".into()));
+        }
+    }
 
     let payment_status = input.payment_status.as_deref().unwrap_or("unpaid");
     let booking_ref = generate_booking_ref();
@@ -193,11 +201,12 @@ async fn create_booking(
         check_out,
         &input.room_ids,
         &booking_ref,
-        input.label.as_deref(),
         input.note.as_deref(),
         input.discount_type.as_deref(),
         input.discount_value,
         payment_status,
+        input.payment_method.as_deref(),
+        input.deposit_amount,
         input.customer_name.as_deref(),
         input.customer_phone.as_deref(),
         input.customer_id_type.as_deref(),
@@ -235,9 +244,14 @@ async fn update_booking(
         .validate()
         .map_err(|e| AppError::Validation(e.to_string()))?;
     let (check_in, check_out) = parse_and_validate_dates(&input.check_in, &input.check_out, false)?;
-    validate_label(input.label.as_deref())?;
     validate_discount(input.discount_type.as_deref(), input.discount_value)?;
     validate_payment_status(input.payment_status.as_deref())?;
+    validate_payment_method(input.payment_method.as_deref())?;
+    if let Some(da) = input.deposit_amount {
+        if da < 0.0 {
+            return Err(AppError::Validation("deposit_amount must be >= 0".into()));
+        }
+    }
 
     let payment_status = input.payment_status.as_deref().unwrap_or("unpaid");
 
@@ -264,11 +278,12 @@ async fn update_booking(
         id,
         check_in,
         check_out,
-        input.label.as_deref(),
         input.note.as_deref(),
         input.discount_type.as_deref(),
         input.discount_value,
         payment_status,
+        input.payment_method.as_deref(),
+        input.deposit_amount,
         input.customer_name.as_deref(),
         input.customer_phone.as_deref(),
         input.customer_id_type.as_deref(),
@@ -359,6 +374,57 @@ async fn income_detail(
     ))
 }
 
+async fn return_deposit(
+    AuthUser(user): AuthUser,
+    State(state): State<AppState>,
+    Path(id): Path<Uuid>,
+) -> Result<Json<BookingDetail>, AppError> {
+    Booking::return_deposit(&state.pool, id, user.id)
+        .await?
+        .ok_or_else(|| AppError::NotFound("booking not found".into()))
+        .map(Json)
+}
+
+#[derive(Debug, Deserialize)]
+struct DailyReportParams {
+    year: i32,
+    month: i32,
+}
+
+async fn daily_report(
+    RequireAdmin(_user): RequireAdmin,
+    State(state): State<AppState>,
+    Query(params): Query<DailyReportParams>,
+) -> Result<Json<Vec<DailyReportRow>>, AppError> {
+    Ok(Json(
+        Booking::daily_report(&state.pool, params.year, params.month).await?,
+    ))
+}
+
+#[derive(Debug, Deserialize)]
+struct DailyReportDetailParams {
+    year: i32,
+    month: i32,
+    day: i32,
+}
+
+async fn unreturned_deposit_summary(
+    RequireAdmin(_user): RequireAdmin,
+    State(state): State<AppState>,
+) -> Result<Json<DepositSummary>, AppError> {
+    Ok(Json(Booking::unreturned_deposit_summary(&state.pool).await?))
+}
+
+async fn daily_report_detail(
+    RequireAdmin(_user): RequireAdmin,
+    State(state): State<AppState>,
+    Query(params): Query<DailyReportDetailParams>,
+) -> Result<Json<Vec<DailyReportDetailRow>>, AppError> {
+    Ok(Json(
+        Booking::daily_report_detail(&state.pool, params.year, params.month, params.day).await?,
+    ))
+}
+
 async fn room_availability(
     AuthUser(_user): AuthUser,
     State(state): State<AppState>,
@@ -392,24 +458,47 @@ async fn upload_document(
         .await?
         .ok_or_else(|| AppError::NotFound("booking not found".into()))?;
 
-    let field = multipart
+    let mut original_filename: Option<String> = None;
+    let mut mime_type_val: Option<String> = None;
+    let mut data_val: Option<axum::body::Bytes> = None;
+    let mut category = "general".to_string();
+
+    while let Some(field) = multipart
         .next_field()
         .await
         .map_err(|e| AppError::Validation(e.to_string()))?
-        .ok_or_else(|| AppError::Validation("no file provided".into()))?;
+    {
+        let field_name = field.name().unwrap_or("").to_string();
+        if field_name == "category" {
+            let text = field
+                .text()
+                .await
+                .map_err(|e| AppError::Validation(e.to_string()))?;
+            if text == "evidence" || text == "general" {
+                category = text;
+            }
+        } else {
+            // Treat as file field
+            original_filename = Some(field.file_name().unwrap_or("document").to_string());
+            mime_type_val = Some(
+                field
+                    .content_type()
+                    .unwrap_or("application/octet-stream")
+                    .to_string(),
+            );
+            data_val = Some(
+                field
+                    .bytes()
+                    .await
+                    .map_err(|e| AppError::Validation(e.to_string()))?,
+            );
+        }
+    }
 
-    let original_filename = field
-        .file_name()
-        .unwrap_or("document")
-        .to_string();
-    let mime_type = field
-        .content_type()
-        .unwrap_or("application/octet-stream")
-        .to_string();
-    let data = field
-        .bytes()
-        .await
-        .map_err(|e| AppError::Validation(e.to_string()))?;
+    let original_filename =
+        original_filename.ok_or_else(|| AppError::Validation("no file provided".into()))?;
+    let mime_type = mime_type_val.unwrap_or_else(|| "application/octet-stream".to_string());
+    let data = data_val.ok_or_else(|| AppError::Validation("no file provided".into()))?;
 
     if data.is_empty() {
         return Err(AppError::Validation("file is empty".into()));
@@ -443,6 +532,7 @@ async fn upload_document(
         &mime_type,
         data.len() as i64,
         user.id,
+        &category,
     )
     .await?;
 
@@ -499,15 +589,43 @@ async fn delete_document(
     Ok(StatusCode::NO_CONTENT)
 }
 
+async fn check_in_booking(
+    AuthUser(user): AuthUser,
+    State(state): State<AppState>,
+    Path(id): Path<Uuid>,
+) -> Result<Json<BookingDetail>, AppError> {
+    Booking::record_check_in(&state.pool, id, user.id)
+        .await?
+        .ok_or_else(|| AppError::NotFound("booking not found".into()))
+        .map(Json)
+}
+
+async fn check_out_booking(
+    AuthUser(user): AuthUser,
+    State(state): State<AppState>,
+    Path(id): Path<Uuid>,
+) -> Result<Json<BookingDetail>, AppError> {
+    Booking::record_check_out(&state.pool, id, user.id)
+        .await?
+        .ok_or_else(|| AppError::NotFound("booking not found".into()))
+        .map(Json)
+}
+
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/income-summary", get(income_summary))
         .route("/income-detail", get(income_detail))
+        .route("/daily-report", get(daily_report))
+        .route("/daily-report-detail", get(daily_report_detail))
+        .route("/deposit-summary", get(unreturned_deposit_summary))
         .route("/room-availability", get(room_availability))
         .route("/today-summary", get(today_summary))
         .route("/", get(list_bookings).post(create_booking))
         .route("/{id}", get(get_booking).put(update_booking))
         .route("/{id}/cancel", put(cancel_booking))
+        .route("/{id}/return-deposit", put(return_deposit))
+        .route("/{id}/check-in", put(check_in_booking))
+        .route("/{id}/check-out", put(check_out_booking))
         .route("/{id}/rooms/{room_id}/cancel", put(cancel_room))
         .route("/{id}/extra-services", post(add_extra_service))
         .route("/{id}/extra-services/{sid}", delete(remove_extra_service))

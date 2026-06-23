@@ -16,8 +16,11 @@ import {
   useRemoveExtraServiceMutation,
   useUploadDocumentMutation,
   useDeleteDocumentMutation,
+  useReturnDepositMutation,
   useTodaySummaryQuery,
   useRoomAvailabilityQuery,
+  useCheckInMutation,
+  useCheckOutMutation,
 } from "@/composables/useBookingsQueries";
 import { bookingsApi } from "@/api/bookings";
 
@@ -31,8 +34,21 @@ type FilterTab = "today" | "upcoming" | "all";
 const activeTab = ref<FilterTab>("today");
 const statusFilter = ref<"" | "active" | "cancelled">("");
 const paymentFilter = ref<"" | "paid" | "unpaid">("");
+const searchQuery = ref("");
+const debouncedSearch = ref("");
 const PAGE_SIZE = 15;
 const currentPage = ref(1);
+
+let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+watch(searchQuery, (v) => {
+  if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+  searchDebounceTimer = setTimeout(() => { debouncedSearch.value = v.trim(); }, 200);
+});
+
+watch(activeTab, () => {
+  searchQuery.value = "";
+  debouncedSearch.value = "";
+});
 
 const todayDate = computed(() => {
   const d = new Date();
@@ -59,6 +75,15 @@ const filteredBookings = computed(() => {
 
   if (paymentFilter.value) {
     list = list.filter((b) => b.payment_status === paymentFilter.value);
+  }
+
+  if (debouncedSearch.value) {
+    const q = debouncedSearch.value.toLowerCase();
+    list = list.filter((b) =>
+      (b.customer_name ?? "").toLowerCase().includes(q) ||
+      b.booking_ref.toLowerCase().includes(q) ||
+      (b.customer_phone ?? "").toLowerCase().includes(q),
+    );
   }
 
   return list;
@@ -160,11 +185,12 @@ const form = reactive({
   check_in: null as string | null,
   check_out: null as string | null,
   room_ids: [] as string[],
-  label: "" as string,
   note: "" as string,
   discount_mode: "none" as DiscountMode,
   discount_value: 0,
   payment_status: false,
+  payment_method: "" as string,
+  deposit_amount: "" as string,
   customer_name: "",
   customer_phone: "",
   customer_id_type: "",
@@ -217,11 +243,12 @@ function openAddDialog() {
   form.check_in = null;
   form.check_out = null;
   form.room_ids = [];
-  form.label = "";
   form.note = "";
   form.discount_mode = "none";
   form.discount_value = 0;
   form.payment_status = false;
+  form.payment_method = "";
+  form.deposit_amount = "";
   form.customer_name = "";
   form.customer_phone = "";
   form.customer_id_type = "";
@@ -236,7 +263,6 @@ function openEditDialog(booking: Booking) {
   form.check_in = booking.check_in.slice(0, 10);
   form.check_out = booking.check_out.slice(0, 10);
   form.room_ids = [];
-  form.label = booking.label ?? "";
   form.note = booking.note ?? "";
   form.discount_mode =
     booking.discount_type === "amount"
@@ -246,6 +272,8 @@ function openEditDialog(booking: Booking) {
         : "none";
   form.discount_value = booking.discount_value ?? 0;
   form.payment_status = booking.payment_status === "paid";
+  form.payment_method = booking.payment_method ?? "";
+  form.deposit_amount = booking.deposit_amount != null ? String(booking.deposit_amount) : "";
   form.customer_name = booking.customer_name ?? "";
   form.customer_phone = booking.customer_phone ?? "";
   form.customer_id_type = booking.customer_id_type ?? "";
@@ -278,15 +306,17 @@ async function handleSubmit() {
     const discount_type = form.discount_mode === "none" ? undefined : form.discount_mode;
     const discount_value = form.discount_mode === "none" ? undefined : form.discount_value;
     const payment_status = form.payment_status ? "paid" : "unpaid";
+    const payment_method = form.payment_method || undefined;
+    const deposit_amount = form.deposit_amount !== "" ? Number(form.deposit_amount) : undefined;
 
     if (editingBooking.value) {
       await updateBookingMutation.mutateAsync({
         id: editingBooking.value.id,
         input: {
           check_in, check_out,
-          label: form.label || undefined,
           note: form.note || undefined,
           discount_type, discount_value, payment_status,
+          payment_method, deposit_amount,
           customer_name: form.customer_name || undefined,
           customer_phone: form.customer_phone || undefined,
           customer_id_type: form.customer_id_type || undefined,
@@ -297,9 +327,9 @@ async function handleSubmit() {
       await createBookingMutation.mutateAsync({
         check_in, check_out,
         room_ids: form.room_ids,
-        label: form.label || undefined,
         note: form.note || undefined,
         discount_type, discount_value, payment_status,
+        payment_method, deposit_amount,
         customer_name: form.customer_name || undefined,
         customer_phone: form.customer_phone || undefined,
         customer_id_type: form.customer_id_type || undefined,
@@ -369,11 +399,12 @@ async function handleTogglePayment(detail: BookingDetail) {
       id: b.id,
       input: {
         check_in: b.check_in, check_out: b.check_out,
-        label: b.label ?? undefined,
         note: b.note ?? undefined,
         discount_type: b.discount_type ?? undefined,
         discount_value: b.discount_value ?? undefined,
         payment_status: newStatus,
+        payment_method: b.payment_method ?? undefined,
+        deposit_amount: b.deposit_amount ?? undefined,
         customer_name: b.customer_name ?? undefined,
         customer_phone: b.customer_phone ?? undefined,
         customer_id_type: b.customer_id_type ?? undefined,
@@ -382,6 +413,57 @@ async function handleTogglePayment(detail: BookingDetail) {
     });
   } catch (err) {
     detailError.value = err instanceof ApiError ? err.message : t("adminBookings.genericError");
+  }
+}
+
+const returnDepositMutation = useReturnDepositMutation();
+const checkInMutation = useCheckInMutation();
+const checkOutMutation = useCheckOutMutation();
+
+async function handleCheckIn() {
+  detailError.value = "";
+  try {
+    await checkInMutation.mutateAsync({ bookingId: selectedBookingId.value });
+  } catch (err) {
+    detailError.value = err instanceof ApiError ? err.message : t("adminBookings.genericError");
+  }
+}
+
+async function handleCheckOut() {
+  detailError.value = "";
+  try {
+    await checkOutMutation.mutateAsync({ bookingId: selectedBookingId.value });
+  } catch (err) {
+    detailError.value = err instanceof ApiError ? err.message : t("adminBookings.genericError");
+  }
+}
+
+async function handleReturnDeposit() {
+  if (!window.confirm(t("adminBookings.confirmReturnDeposit"))) return;
+  detailError.value = "";
+  try {
+    await returnDepositMutation.mutateAsync({ bookingId: selectedBookingId.value });
+  } catch (err) {
+    detailError.value = err instanceof ApiError ? err.message : t("adminBookings.genericError");
+  }
+}
+
+const evidenceUploadError = ref("");
+const isEvidenceUploading = ref(false);
+
+async function handleEvidenceUpload(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
+  input.value = "";
+  evidenceUploadError.value = "";
+  isEvidenceUploading.value = true;
+  try {
+    await uploadDocumentMutation.mutateAsync({ bookingId: selectedBookingId.value, file, category: "evidence" });
+  } catch (err) {
+    evidenceUploadError.value = err instanceof ApiError ? err.message : t("adminBookings.genericError");
+  } finally {
+    isEvidenceUploading.value = false;
   }
 }
 
@@ -410,7 +492,7 @@ const isPending = computed(
 );
 
 // --- Stat panel ---
-type StatType = "occupied" | "check_ins" | "check_outs" | "needs_attention";
+type StatType = "occupied" | "check_ins" | "check_outs";
 const statPanel = ref<{ visible: boolean; type: StatType | null }>({ visible: false, type: null });
 const statDialogEl = ref<HTMLDialogElement>();
 
@@ -424,7 +506,6 @@ const statPanelTitle = computed(() => {
     case "occupied": return t("adminBookings.statOccupied");
     case "check_ins": return t("adminBookings.statCheckInsToday");
     case "check_outs": return t("adminBookings.statCheckOutsToday");
-    case "needs_attention": return t("adminBookings.statNeedsAttention");
     default: return "";
   }
 });
@@ -439,7 +520,6 @@ const statPanelBookings = computed(() => {
       case "occupied": return ci <= todayDate.value && co > todayDate.value;
       case "check_ins": return ci === todayDate.value;
       case "check_outs": return co === todayDate.value;
-      case "needs_attention": return b.label === "needs_attention";
     }
   });
 });
@@ -492,17 +572,6 @@ function openDetailFromPanel(id: string) {
         <p class="text-[0.65rem] font-semibold uppercase tracking-widest text-base-content/40 h-8 flex items-start">{{ t("adminBookings.statCheckOutsToday") }}</p>
         <p class="text-3xl font-bold text-base-content">{{ todaySummary?.check_outs_today ?? "—" }}</p>
       </div>
-      <!-- Needs attention -->
-      <div
-        class="bg-base-100 rounded-xl border border-base-200 shadow-sm px-5 py-4 border-t-2 cursor-pointer hover:bg-base-200/60 transition-colors"
-        :class="todaySummary && todaySummary.needs_attention > 0 ? 'border-t-red-500' : 'border-t-base-300'"
-        @click="openStatPanel('needs_attention')"
-      >
-        <p class="text-[0.65rem] font-semibold uppercase tracking-widest text-base-content/40 h-8 flex items-start">{{ t("adminBookings.statNeedsAttention") }}</p>
-        <p class="text-3xl font-bold" :class="todaySummary && todaySummary.needs_attention > 0 ? 'text-red-500' : 'text-base-content'">
-          {{ todaySummary?.needs_attention ?? "—" }}
-        </p>
-      </div>
     </div>
 
     <!-- Main card -->
@@ -548,6 +617,22 @@ function openDetailFromPanel(id: string) {
             <option value="paid">{{ t("adminBookings.paymentPaid") }}</option>
             <option value="unpaid">{{ t("adminBookings.paymentUnpaid") }}</option>
           </select>
+
+          <div class="relative flex items-center">
+            <input
+              v-model="searchQuery"
+              type="text"
+              class="input input-bordered input-sm pr-7 w-44"
+              :placeholder="t('adminBookings.searchPlaceholder')"
+            />
+            <button
+              v-if="searchQuery"
+              class="absolute right-1.5 text-base-content/40 hover:text-base-content"
+              @click="searchQuery = ''"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
 
           <span class="ml-auto text-xs text-base-content/50">
             {{ filteredBookings.length }} {{ filteredBookings.length === 1 ? "booking" : "bookings" }}
@@ -680,13 +765,74 @@ function openDetailFromPanel(id: string) {
             </div>
             <div class="flex items-center justify-between px-4 py-2.5">
               <span class="text-base-content/50">{{ t("adminBookings.paymentStatus") }}</span>
-              <span :class="['badge badge-sm', bookingDetail.booking.payment_status === 'paid' ? 'badge-info' : 'badge-ghost']">
-                {{ bookingDetail.booking.payment_status === "paid" ? t("adminBookings.paymentPaid") : t("adminBookings.paymentUnpaid") }}
-              </span>
+              <div class="flex items-center gap-2">
+                <span :class="['badge badge-sm', bookingDetail.booking.payment_status === 'paid' ? 'badge-info' : 'badge-ghost']">
+                  {{ bookingDetail.booking.payment_status === "paid" ? t("adminBookings.paymentPaid") : t("adminBookings.paymentUnpaid") }}
+                </span>
+                <span v-if="bookingDetail.booking.paid_at" class="text-sm text-base-content/50">
+                  {{ new Date(bookingDetail.booking.paid_at).toLocaleDateString() }}
+                </span>
+              </div>
             </div>
-            <div v-if="bookingDetail.booking.label" class="flex items-center justify-between px-4 py-2.5">
-              <span class="text-base-content/50">{{ t("adminBookings.label") }}</span>
-              <span class="font-medium">{{ bookingDetail.booking.label }}</span>
+            <div class="flex items-center justify-between px-4 py-2.5">
+              <span class="text-base-content/50">{{ t("adminBookings.paymentMethod") }}</span>
+              <span v-if="bookingDetail.booking.payment_method === 'cash'" class="badge badge-sm badge-success">{{ t("adminBookings.paymentMethodCash") }}</span>
+              <span v-else-if="bookingDetail.booking.payment_method === 'bank_transfer'" class="badge badge-sm badge-info">{{ t("adminBookings.paymentMethodBankTransfer") }}</span>
+              <span v-else class="text-base-content/40">—</span>
+            </div>
+            <div v-if="bookingDetail.booking.deposit_amount != null" class="flex items-center justify-between px-4 py-2.5">
+              <span class="text-base-content/50">{{ t("adminBookings.depositAmount") }}</span>
+              <div class="flex items-center gap-2">
+                <span class="font-medium">₭{{ formatPrice(bookingDetail.booking.deposit_amount) }}</span>
+                <span v-if="bookingDetail.booking.deposit_returned" class="badge badge-sm badge-success">
+                  {{ t("adminBookings.depositReturned") }}
+                  <template v-if="bookingDetail.booking.deposit_returned_at">
+                    &nbsp;{{ new Date(bookingDetail.booking.deposit_returned_at).toLocaleDateString() }}
+                  </template>
+                </span>
+                <button
+                  v-else-if="bookingDetail.booking.status === 'active'"
+                  class="btn btn-xs btn-outline btn-warning"
+                  @click="handleReturnDeposit"
+                >
+                  {{ t("adminBookings.returnDeposit") }}
+                </button>
+                <span v-else class="text-base-content/40">{{ t("adminBookings.depositNotReturned") }}</span>
+              </div>
+            </div>
+            <div class="flex items-center justify-between px-4 py-2.5">
+              <span class="text-base-content/50">{{ t("adminBookings.actualCheckIn") }}</span>
+              <div class="flex items-center gap-2">
+                <span v-if="bookingDetail.booking.actual_check_in" class="text-sm">
+                  {{ new Date(bookingDetail.booking.actual_check_in).toLocaleString() }}
+                </span>
+                <button
+                  v-if="!bookingDetail.booking.actual_check_in && bookingDetail.booking.status === 'active'"
+                  class="btn btn-xs btn-outline btn-success"
+                  :disabled="checkInMutation.isPending.value"
+                  @click="handleCheckIn"
+                >
+                  {{ t("adminBookings.checkInAction") }}
+                </button>
+                <span v-else-if="!bookingDetail.booking.actual_check_in" class="text-base-content/40">—</span>
+              </div>
+            </div>
+            <div class="flex items-center justify-between px-4 py-2.5">
+              <span class="text-base-content/50">{{ t("adminBookings.actualCheckOut") }}</span>
+              <div class="flex items-center gap-2">
+                <span v-if="bookingDetail.booking.actual_check_out" class="text-sm">
+                  {{ new Date(bookingDetail.booking.actual_check_out).toLocaleString() }}
+                </span>
+                <button
+                  v-else-if="bookingDetail.booking.actual_check_in && bookingDetail.booking.status === 'active'"
+                  class="btn btn-xs btn-outline btn-warning"
+                  :disabled="checkOutMutation.isPending.value"
+                  @click="handleCheckOut"
+                >
+                  {{ t("adminBookings.checkOutAction") }}
+                </button>
+                <span v-else class="text-base-content/40">—</span>
+              </div>
             </div>
             <div v-if="bookingDetail.booking.note" class="flex items-start justify-between gap-8 px-4 py-2.5">
               <span class="text-base-content/50 shrink-0">{{ t("adminBookings.note") }}</span>
@@ -807,33 +953,70 @@ function openDetailFromPanel(id: string) {
               <span class="text-xs font-semibold uppercase tracking-widest text-base-content/40 shrink-0">{{ t("adminBookings.documents") }}</span>
               <div class="flex-1 h-px bg-base-200"></div>
             </div>
-            <div v-if="bookingDetail.documents.length > 0" class="flex flex-col gap-1.5 mb-3">
-              <div
-                v-for="doc in bookingDetail.documents"
-                :key="doc.id"
-                class="flex items-center gap-3 rounded-lg border border-base-200 bg-base-200/40 px-3 py-2"
-              >
-                <span class="text-lg leading-none">{{ doc.mime_type === "application/pdf" ? "📄" : "🖼️" }}</span>
-                <div class="flex-1 min-w-0">
-                  <p class="text-sm truncate">{{ doc.filename }}</p>
-                  <p class="text-xs text-base-content/40">{{ formatFileSize(doc.size) }} · {{ t("adminBookings.uploadedBy") }} {{ doc.uploaded_by_name }}</p>
+
+            <!-- Payment Evidence sub-section -->
+            <div class="mb-3">
+              <p class="text-xs font-medium text-base-content/60 mb-1.5">{{ t("adminBookings.paymentEvidence") }}</p>
+              <div v-if="bookingDetail.documents.filter(d => d.category === 'evidence').length > 0" class="flex flex-col gap-1.5 mb-2">
+                <div
+                  v-for="doc in bookingDetail.documents.filter(d => d.category === 'evidence')"
+                  :key="doc.id"
+                  class="flex items-center gap-3 rounded-lg border border-base-200 bg-base-200/40 px-3 py-2"
+                >
+                  <span class="text-lg leading-none">{{ doc.mime_type === "application/pdf" ? "📄" : "🖼️" }}</span>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm truncate">{{ doc.filename }}</p>
+                    <p class="text-xs text-base-content/40">{{ formatFileSize(doc.size) }} · {{ t("adminBookings.uploadedBy") }} {{ doc.uploaded_by_name }}</p>
+                  </div>
+                  <a :href="bookingsApi.documentDownloadUrl(bookingDetail!.booking.id, doc.id)" target="_blank" rel="noopener" class="btn btn-xs btn-ghost btn-info shrink-0">
+                    {{ t("adminBookings.downloading") }}
+                  </a>
+                  <button class="btn btn-xs btn-ghost btn-error shrink-0" @click="handleDeleteDocument(doc.id)">
+                    {{ t("adminBookings.deleteDocument") }}
+                  </button>
                 </div>
-                <a :href="bookingsApi.documentDownloadUrl(bookingDetail!.booking.id, doc.id)" target="_blank" rel="noopener" class="btn btn-xs btn-ghost btn-info shrink-0">
-                  {{ t("adminBookings.downloading") }}
-                </a>
-                <button class="btn btn-xs btn-ghost btn-error shrink-0" @click="handleDeleteDocument(doc.id)">
-                  {{ t("adminBookings.deleteDocument") }}
-                </button>
               </div>
+              <div class="flex items-center gap-3">
+                <label :class="['btn btn-xs btn-outline cursor-pointer', isEvidenceUploading ? 'btn-disabled' : '']">
+                  <span>{{ isEvidenceUploading ? "…" : t("adminBookings.uploadDocument") }}</span>
+                  <input type="file" class="sr-only" accept=".jpg,.jpeg,.png,.pdf,.webp,.gif" :disabled="isEvidenceUploading" @change="handleEvidenceUpload" />
+                </label>
+                <span class="text-xs text-base-content/40">{{ t("adminBookings.docAllowedTypes") }}</span>
+              </div>
+              <p v-if="evidenceUploadError" class="mt-1 text-xs text-error">{{ evidenceUploadError }}</p>
             </div>
-            <div class="flex items-center gap-3">
-              <label :class="['btn btn-sm btn-outline cursor-pointer', isUploading ? 'btn-disabled' : '']">
-                <span>{{ isUploading ? "…" : t("adminBookings.uploadDocument") }}</span>
-                <input type="file" class="sr-only" accept=".jpg,.jpeg,.png,.pdf,.webp,.gif" :disabled="isUploading" @change="handleFileUpload" />
-              </label>
-              <span class="text-xs text-base-content/40">{{ t("adminBookings.docAllowedTypes") }}</span>
+
+            <!-- General Documents sub-section -->
+            <div>
+              <p class="text-xs font-medium text-base-content/60 mb-1.5">{{ t("adminBookings.generalDocuments") }}</p>
+              <div v-if="bookingDetail.documents.filter(d => d.category !== 'evidence').length > 0" class="flex flex-col gap-1.5 mb-2">
+                <div
+                  v-for="doc in bookingDetail.documents.filter(d => d.category !== 'evidence')"
+                  :key="doc.id"
+                  class="flex items-center gap-3 rounded-lg border border-base-200 bg-base-200/40 px-3 py-2"
+                >
+                  <span class="text-lg leading-none">{{ doc.mime_type === "application/pdf" ? "📄" : "🖼️" }}</span>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm truncate">{{ doc.filename }}</p>
+                    <p class="text-xs text-base-content/40">{{ formatFileSize(doc.size) }} · {{ t("adminBookings.uploadedBy") }} {{ doc.uploaded_by_name }}</p>
+                  </div>
+                  <a :href="bookingsApi.documentDownloadUrl(bookingDetail!.booking.id, doc.id)" target="_blank" rel="noopener" class="btn btn-xs btn-ghost btn-info shrink-0">
+                    {{ t("adminBookings.downloading") }}
+                  </a>
+                  <button class="btn btn-xs btn-ghost btn-error shrink-0" @click="handleDeleteDocument(doc.id)">
+                    {{ t("adminBookings.deleteDocument") }}
+                  </button>
+                </div>
+              </div>
+              <div class="flex items-center gap-3">
+                <label :class="['btn btn-sm btn-outline cursor-pointer', isUploading ? 'btn-disabled' : '']">
+                  <span>{{ isUploading ? "…" : t("adminBookings.uploadDocument") }}</span>
+                  <input type="file" class="sr-only" accept=".jpg,.jpeg,.png,.pdf,.webp,.gif" :disabled="isUploading" @change="handleFileUpload" />
+                </label>
+                <span class="text-xs text-base-content/40">{{ t("adminBookings.docAllowedTypes") }}</span>
+              </div>
+              <p v-if="uploadError" class="mt-1 text-xs text-error">{{ uploadError }}</p>
             </div>
-            <p v-if="uploadError" class="mt-1 text-xs text-error">{{ uploadError }}</p>
           </div>
 
           <!-- Total + audit trail -->
@@ -946,17 +1129,6 @@ function openDetailFromPanel(id: string) {
             </div>
           </div>
 
-          <!-- Label -->
-          <label class="form-control">
-            <div class="label py-0.5"><span class="label-text text-xs font-medium">{{ t("adminBookings.label") }}</span></div>
-            <select v-model="form.label" class="select select-bordered select-sm w-full">
-              <option value="">{{ t("adminBookings.labelNone") }}</option>
-              <option value="check_in">{{ t("adminBookings.labelCheckIn") }}</option>
-              <option value="check_out">{{ t("adminBookings.labelCheckOut") }}</option>
-              <option value="needs_attention">{{ t("adminBookings.labelNeedsAttention") }}</option>
-            </select>
-          </label>
-
           <!-- Note -->
           <label class="form-control">
             <div class="label py-0.5">
@@ -1009,6 +1181,32 @@ function openDetailFromPanel(id: string) {
                 {{ form.payment_status ? t("adminBookings.paymentPaid") : t("adminBookings.paymentUnpaid") }}
               </span>
             </div>
+          </label>
+
+          <!-- Payment method (shown when paid) -->
+          <label v-if="form.payment_status" class="form-control">
+            <div class="label py-0.5"><span class="label-text text-xs font-medium">{{ t("adminBookings.paymentMethod") }}</span></div>
+            <select v-model="form.payment_method" class="select select-bordered select-sm w-full">
+              <option value="">{{ t("adminBookings.paymentMethodUnset") }}</option>
+              <option value="cash">{{ t("adminBookings.paymentMethodCash") }}</option>
+              <option value="bank_transfer">{{ t("adminBookings.paymentMethodBankTransfer") }}</option>
+            </select>
+          </label>
+
+          <!-- Security deposit -->
+          <label class="form-control">
+            <div class="label py-0.5">
+              <span class="label-text text-xs font-medium">{{ t("adminBookings.depositAmount") }}</span>
+              <span class="label-text-alt text-xs text-base-content/40">({{ t("adminBookings.optional") }})</span>
+            </div>
+            <input
+              v-model="form.deposit_amount"
+              type="number"
+              min="0"
+              step="any"
+              class="input input-bordered input-sm w-full"
+              :placeholder="t('adminBookings.depositAmount')"
+            />
           </label>
 
           <!-- Customer info toggle -->
