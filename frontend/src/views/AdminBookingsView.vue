@@ -102,6 +102,20 @@ const pagedBookings = computed(() => {
   return filteredBookings.value.slice(start, start + PAGE_SIZE);
 });
 
+const depositStats = computed(() => {
+  const all = filteredBookings.value;
+  const hasDeposit = (b: Booking) => b.deposit_amount != null && b.deposit_amount > 0;
+  const heldBookings = all.filter((b) => hasDeposit(b) && !b.deposit_returned && b.status === "active");
+  const returnedCount = all.filter((b) => hasDeposit(b) && b.deposit_returned).length;
+  const heldAmount = heldBookings.reduce((sum, b) => sum + (b.deposit_amount ?? 0), 0);
+  return {
+    heldCount: heldBookings.length,
+    heldAmount,
+    returnedCount,
+    heldBookings,
+  };
+});
+
 function onTabChange(tab: FilterTab) {
   activeTab.value = tab;
   currentPage.value = 1;
@@ -642,6 +656,42 @@ function openDetailFromPanel(id: string) {
       </div>
     </div>
 
+    <!-- Deposit stats panel -->
+    <div
+      v-if="depositStats.heldCount > 0 || depositStats.returnedCount > 0"
+      class="flex items-start gap-4 rounded-xl border px-4 py-3"
+      :class="depositStats.heldCount > 0 ? 'border-amber-300 bg-amber-50' : 'border-green-200 bg-green-50'"
+    >
+      <div
+        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full mt-0.5"
+        :class="depositStats.heldCount > 0 ? 'bg-amber-100' : 'bg-green-100'"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" :class="depositStats.heldCount > 0 ? 'text-amber-600' : 'text-green-600'">
+          <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="text-xs font-semibold uppercase tracking-wide" :class="depositStats.heldCount > 0 ? 'text-amber-700' : 'text-green-700'">
+          {{ t("adminBookings.depositsHeldTitle") }}
+        </p>
+        <p class="mt-0.5 text-sm" :class="depositStats.heldCount > 0 ? 'text-amber-900' : 'text-green-800'">
+          {{ t("adminBookings.depositsHeldSummary", { count: depositStats.heldCount, amount: settingsStore.formatPrice(depositStats.heldAmount) }) }}
+          <span class="text-xs ml-2 opacity-70">{{ t("adminBookings.depositsReturnedNote", { n: depositStats.returnedCount }) }}</span>
+        </p>
+        <div v-if="depositStats.heldCount > 0" class="flex flex-wrap gap-1.5 mt-2">
+          <button
+            v-for="booking in depositStats.heldBookings"
+            :key="booking.id"
+            class="badge badge-sm badge-warning cursor-pointer"
+            @click="openDetail(booking.id)"
+          >
+            {{ booking.booking_ref }}
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Main card -->
     <div class="card bg-base-100 shadow-sm">
       <div class="card-body p-6">
@@ -718,13 +768,14 @@ function openDetailFromPanel(id: string) {
                 <th>{{ t("adminBookings.paymentStatus") }}</th>
                 <th>{{ t("adminBookings.checkIn") }}</th>
                 <th>{{ t("adminBookings.checkOut") }}</th>
+                <th>{{ t("adminBookings.depositColumn") }}</th>
                 <th>{{ t("adminBookings.customer") }}</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
               <tr v-if="pagedBookings.length === 0">
-                <td colspan="7" class="py-8 text-center text-base-content/40">
+                <td colspan="8" class="py-8 text-center text-base-content/40">
                   {{ t("adminBookings.emptyState") }}
                 </td>
               </tr>
@@ -742,6 +793,18 @@ function openDetailFromPanel(id: string) {
                 </td>
                 <td>{{ settingsStore.formatDate(booking.check_in) }}</td>
                 <td>{{ settingsStore.formatDate(booking.check_out) }}</td>
+                <td>
+                  <span v-if="booking.deposit_amount == null" class="text-base-content/40">—</span>
+                  <span
+                    v-else
+                    class="inline-flex items-center gap-1 text-xs font-medium"
+                    :class="booking.deposit_returned ? 'text-green-600' : 'text-amber-600'"
+                  >
+                    {{ settingsStore.formatPrice(booking.deposit_amount) }}
+                    <span v-if="booking.deposit_returned" class="badge badge-xs badge-success">{{ t("adminBookings.depositReturned") }}</span>
+                    <span v-else class="badge badge-xs badge-warning">{{ t("adminBookings.depositHeldBadge") }}</span>
+                  </span>
+                </td>
                 <td class="text-xs text-base-content/50">{{ booking.customer_name ?? "—" }}</td>
                 <td>
                   <div class="flex items-center gap-1">
@@ -838,7 +901,7 @@ function openDetailFromPanel(id: string) {
                   {{ bookingDetail.booking.payment_status === "paid" ? t("adminBookings.paymentPaid") : t("adminBookings.paymentUnpaid") }}
                 </span>
                 <span v-if="bookingDetail.booking.paid_at" class="text-sm text-base-content/50">
-                  {{ new Date(bookingDetail.booking.paid_at).toLocaleDateString() }}
+                  {{ settingsStore.formatDate(bookingDetail.booking.paid_at) }}
                 </span>
               </div>
             </div>
@@ -855,7 +918,7 @@ function openDetailFromPanel(id: string) {
                 <span v-if="bookingDetail.booking.deposit_returned" class="badge badge-sm badge-success">
                   {{ t("adminBookings.depositReturned") }}
                   <template v-if="bookingDetail.booking.deposit_returned_at">
-                    &nbsp;{{ new Date(bookingDetail.booking.deposit_returned_at).toLocaleDateString() }}
+                    &nbsp;{{ settingsStore.formatDate(bookingDetail.booking.deposit_returned_at) }}
                   </template>
                 </span>
                 <button
@@ -872,7 +935,7 @@ function openDetailFromPanel(id: string) {
               <span class="text-base-content/50">{{ t("adminBookings.actualCheckIn") }}</span>
               <div class="flex items-center gap-2">
                 <span v-if="bookingDetail.booking.actual_check_in" class="text-sm">
-                  {{ new Date(bookingDetail.booking.actual_check_in).toLocaleString() }}
+                  {{ settingsStore.formatDateTime(bookingDetail.booking.actual_check_in) }}
                 </span>
                 <button
                   v-if="!bookingDetail.booking.actual_check_in && bookingDetail.booking.status === 'active'"
@@ -889,7 +952,7 @@ function openDetailFromPanel(id: string) {
               <span class="text-base-content/50">{{ t("adminBookings.actualCheckOut") }}</span>
               <div class="flex items-center gap-2">
                 <span v-if="bookingDetail.booking.actual_check_out" class="text-sm">
-                  {{ new Date(bookingDetail.booking.actual_check_out).toLocaleString() }}
+                  {{ settingsStore.formatDateTime(bookingDetail.booking.actual_check_out) }}
                 </span>
                 <button
                   v-else-if="bookingDetail.booking.actual_check_in && bookingDetail.booking.status === 'active'"
@@ -1090,7 +1153,7 @@ function openDetailFromPanel(id: string) {
           <!-- Total + audit trail -->
           <div class="flex items-end justify-between pt-4 border-t border-base-200">
             <div class="flex flex-col gap-0.5 text-xs text-base-content/40">
-              <span>{{ t("adminBookings.createdAt") }}: <span class="text-base-content/60">{{ new Date(bookingDetail.booking.created_at).toLocaleString() }}</span></span>
+              <span>{{ t("adminBookings.createdAt") }}: <span class="text-base-content/60">{{ settingsStore.formatDateTime(bookingDetail.booking.created_at) }}</span></span>
               <span>{{ t("adminBookings.createdBy") }}: <span class="text-base-content/60">{{ bookingDetail.booking.created_by_name || "—" }}</span></span>
               <span>{{ t("adminBookings.lastEditedBy") }}: <span class="text-base-content/60">{{ bookingDetail.booking.updated_by_name || "—" }}</span></span>
             </div>
