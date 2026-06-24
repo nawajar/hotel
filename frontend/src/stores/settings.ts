@@ -5,6 +5,7 @@ const DEFAULT_TIMEZONE = "Asia/Bangkok";
 const DEFAULT_PRICE_SYMBOL = "₭";
 const DEFAULT_DATE_FORMAT = "DD/MM/YYYY";
 const DEFAULT_FONT_SIZE = "medium";
+const DEFAULT_NUMBER_FORMAT = "1,234.56";
 
 const FONT_SIZE_MAP: Record<string, string> = {
   small: "14px",
@@ -18,6 +19,7 @@ export const useSettingsStore = defineStore("settings", {
     priceSymbol: DEFAULT_PRICE_SYMBOL,
     dateFormat: DEFAULT_DATE_FORMAT,
     fontSize: DEFAULT_FONT_SIZE,
+    numberFormat: DEFAULT_NUMBER_FORMAT,
   }),
   actions: {
     async load() {
@@ -27,12 +29,14 @@ export const useSettingsStore = defineStore("settings", {
         this.priceSymbol = data.price_symbol;
         this.dateFormat = data.date_format;
         this.fontSize = data.font_size;
+        this.numberFormat = data.number_format;
         this.applyFontSize();
       } catch {
         this.timezone = DEFAULT_TIMEZONE;
         this.priceSymbol = DEFAULT_PRICE_SYMBOL;
         this.dateFormat = DEFAULT_DATE_FORMAT;
         this.fontSize = DEFAULT_FONT_SIZE;
+        this.numberFormat = DEFAULT_NUMBER_FORMAT;
         this.applyFontSize();
       }
     },
@@ -140,7 +144,16 @@ export const useSettingsStore = defineStore("settings", {
       }
     },
     formatPrice(price: number): string {
-      return `${this.priceSymbol}${price.toLocaleString()}`;
+      const fixed = price.toFixed(2);
+      const [intPart, decPart] = fixed.split(".");
+
+      if (this.numberFormat === "1.234,56") {
+        const intFormatted = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        return `${this.priceSymbol}${intFormatted},${decPart}`;
+      } else {
+        const intFormatted = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        return `${this.priceSymbol}${intFormatted}.${decPart}`;
+      }
     },
   },
 });

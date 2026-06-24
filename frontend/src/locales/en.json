@@ -54,7 +54,8 @@
     "settingsFontSize": "Font Size",
     "settingsFontSizeSmall": "Small",
     "settingsFontSizeMedium": "Medium",
-    "settingsFontSizeLarge": "Large"
+    "settingsFontSizeLarge": "Large",
+    "settingsNumberFormat": "Number Format"
   },
   "adminTranslations": {
     "title": "Translations",

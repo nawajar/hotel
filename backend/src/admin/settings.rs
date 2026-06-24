@@ -10,6 +10,7 @@ pub struct SettingsResponse {
     pub price_symbol: String,
     pub date_format: String,
     pub font_size: String,
+    pub number_format: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -18,11 +19,12 @@ pub struct UpdateSettingsInput {
     pub price_symbol: Option<String>,
     pub date_format: Option<String>,
     pub font_size: Option<String>,
+    pub number_format: Option<String>,
 }
 
 async fn fetch_settings(pool: &sqlx::PgPool) -> Result<SettingsResponse, AppError> {
     let rows = sqlx::query(
-        "SELECT key, value FROM system_settings WHERE key IN ('timezone', 'price_symbol', 'date_format', 'font_size')",
+        "SELECT key, value FROM system_settings WHERE key IN ('timezone', 'price_symbol', 'date_format', 'font_size', 'number_format')",
     )
     .fetch_all(pool)
     .await?;
@@ -31,6 +33,7 @@ async fn fetch_settings(pool: &sqlx::PgPool) -> Result<SettingsResponse, AppErro
     let mut price_symbol = "₭".to_string();
     let mut date_format = "DD/MM/YYYY".to_string();
     let mut font_size = "medium".to_string();
+    let mut number_format = "1,234.56".to_string();
 
     for row in rows {
         let key: String = row.try_get("key")?;
@@ -40,6 +43,7 @@ async fn fetch_settings(pool: &sqlx::PgPool) -> Result<SettingsResponse, AppErro
             "price_symbol" => price_symbol = value,
             "date_format" => date_format = value,
             "font_size" => font_size = value,
+            "number_format" => number_format = value,
             _ => {}
         }
     }
@@ -49,6 +53,7 @@ async fn fetch_settings(pool: &sqlx::PgPool) -> Result<SettingsResponse, AppErro
         price_symbol,
         date_format,
         font_size,
+        number_format,
     })
 }
 
@@ -118,6 +123,23 @@ async fn update_settings(
              ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now(), updated_by = EXCLUDED.updated_by",
         )
         .bind("font_size")
+        .bind(value)
+        .bind(user.id)
+        .execute(&state.pool)
+        .await?;
+    }
+
+    if let Some(ref value) = input.number_format {
+        let valid = ["1,234.56", "1.234,56"];
+        if !valid.contains(&value.as_str()) {
+            return Err(AppError::Validation("Invalid number_format value.".to_string()));
+        }
+        sqlx::query(
+            "INSERT INTO system_settings (key, value, updated_at, updated_by) \
+             VALUES ($1, $2, now(), $3) \
+             ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now(), updated_by = EXCLUDED.updated_by",
+        )
+        .bind("number_format")
         .bind(value)
         .bind(user.id)
         .execute(&state.pool)

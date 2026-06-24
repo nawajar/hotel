@@ -115,7 +115,7 @@ function formatDate(iso: string) {
 }
 
 function formatPrice(price: number) {
-  return price.toLocaleString();
+  return settingsStore.formatPrice(price);
 }
 
 const isPending = () =>

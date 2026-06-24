@@ -54,7 +54,8 @@
     "settingsFontSize": "ขนาดตัวอักษร",
     "settingsFontSizeSmall": "เล็ก",
     "settingsFontSizeMedium": "กลาง",
-    "settingsFontSizeLarge": "ใหญ่"
+    "settingsFontSizeLarge": "ใหญ่",
+    "settingsNumberFormat": "รูปแบบตัวเลข"
   },
   "adminTranslations": {
     "title": "คำแปล",

@@ -54,7 +54,8 @@
     "settingsFontSize": "ຂະໜາດຕົວໜັງສື",
     "settingsFontSizeSmall": "ນ້ອຍ",
     "settingsFontSizeMedium": "ກາງ",
-    "settingsFontSizeLarge": "ໃຫຍ່"
+    "settingsFontSizeLarge": "ໃຫຍ່",
+    "settingsNumberFormat": "ຮູບແບບຕົວເລກ"
   },
   "adminTranslations": {
     "title": "ການແປພາສາ",

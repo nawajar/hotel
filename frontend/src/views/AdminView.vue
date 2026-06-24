@@ -54,6 +54,11 @@ const FONT_SIZES = computed(() => [
   { label: t("admin.settingsFontSizeLarge"), value: "large" },
 ]);
 
+const NUMBER_FORMATS = computed(() => [
+  { label: "1,234.56", value: "1,234.56" },
+  { label: "1.234,56", value: "1.234,56" },
+]);
+
 async function handlePing() {
   pingResult.value = "";
   try {
@@ -78,15 +83,16 @@ const settingsForm = ref({
   priceSymbol: settingsStore.priceSymbol,
   dateFormat: settingsStore.dateFormat,
   fontSize: settingsStore.fontSize,
+  numberFormat: settingsStore.numberFormat,
 });
 const settingsSaving = ref(false);
 const settingsSaved = ref(false);
 const settingsError = ref("");
 
 watch(
-  () => [settingsStore.timezone, settingsStore.priceSymbol, settingsStore.dateFormat, settingsStore.fontSize] as const,
-  ([tz, sym, df, fs]) => {
-    settingsForm.value = { timezone: tz, priceSymbol: sym, dateFormat: df, fontSize: fs };
+  () => [settingsStore.timezone, settingsStore.priceSymbol, settingsStore.dateFormat, settingsStore.fontSize, settingsStore.numberFormat] as const,
+  ([tz, sym, df, fs, nf]) => {
+    settingsForm.value = { timezone: tz, priceSymbol: sym, dateFormat: df, fontSize: fs, numberFormat: nf };
   },
   { immediate: true },
 );
@@ -107,12 +113,14 @@ async function handleSaveSettings() {
       price_symbol: settingsForm.value.priceSymbol || undefined,
       date_format: settingsForm.value.dateFormat || undefined,
       font_size: settingsForm.value.fontSize || undefined,
+      number_format: settingsForm.value.numberFormat || undefined,
     });
     await settingsStore.load();
     settingsForm.value.timezone = settingsStore.timezone;
     settingsForm.value.priceSymbol = settingsStore.priceSymbol;
     settingsForm.value.dateFormat = settingsStore.dateFormat;
     settingsForm.value.fontSize = settingsStore.fontSize;
+    settingsForm.value.numberFormat = settingsStore.numberFormat;
     settingsStore.applyFontSize();
     settingsSaved.value = true;
     setTimeout(() => { settingsSaved.value = false; }, 2000);
@@ -175,6 +183,15 @@ async function handleSaveSettings() {
             class="rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 bg-white"
           >
             <option v-for="fs in FONT_SIZES" :key="fs.value" :value="fs.value">{{ fs.label }}</option>
+          </select>
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium text-gray-700">{{ t("admin.settingsNumberFormat") }}</label>
+          <select
+            v-model="settingsForm.numberFormat"
+            class="rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 bg-white"
+          >
+            <option v-for="nf in NUMBER_FORMATS" :key="nf.value" :value="nf.value">{{ nf.label }}</option>
           </select>
         </div>
         <div class="flex items-center gap-3">

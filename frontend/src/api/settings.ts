@@ -5,6 +5,7 @@ export interface SystemSettings {
   price_symbol: string;
   date_format: string;
   font_size: string;
+  number_format: string;
 }
 
 export interface UpdateSettingsInput {
@@ -12,6 +13,7 @@ export interface UpdateSettingsInput {
   price_symbol?: string;
   date_format?: string;
   font_size?: string;
+  number_format?: string;
 }
 
 export const settingsApi = {
