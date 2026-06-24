@@ -44,6 +44,8 @@ const groupedKeys = computed(() => {
   return groups;
 });
 
+const activeGroup = ref<string>([...groupedKeys.value.keys()][0] ?? '');
+
 const drafts = reactive<Record<string, string>>({});
 const savingField = ref<string | null>(null);
 const savedField = ref<string | null>(null);
@@ -104,21 +106,33 @@ async function reset(key: string, locale: Locale) {
       <p class="mt-2 text-sm text-gray-600">{{ t("adminTranslations.description") }}</p>
 
       <div v-if="isLoading" class="mt-6 text-sm text-gray-500">…</div>
-      <div v-else class="mt-6 flex flex-col gap-6">
+      <div v-else class="mt-6">
 
-        <div
-          v-for="[group, keys] in groupedKeys"
-          :key="group"
-          class="rounded-lg border border-gray-200 overflow-hidden"
-        >
-          <!-- Group header -->
-          <div class="bg-gray-50 border-b border-gray-200 px-4 py-2 flex items-center gap-2">
-            <span class="font-mono text-xs font-semibold text-gray-700">{{ group }}</span>
-            <span class="text-xs text-gray-400">{{ keys.length }}</span>
+        <!-- Tab bar -->
+        <div class="overflow-x-auto">
+          <div class="flex flex-nowrap gap-1 border-b border-gray-200 pb-0">
+            <button
+              v-for="[group, keys] in groupedKeys"
+              :key="group"
+              class="flex items-center gap-1.5 px-3 py-2 whitespace-nowrap text-sm rounded-t-md border border-b-0 transition-colors"
+              :class="group === activeGroup
+                ? 'bg-white border-gray-200 text-gray-900 -mb-px z-10'
+                : 'bg-gray-50 border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-100'"
+              @click="activeGroup = group"
+            >
+              <span class="font-mono text-xs font-semibold">{{ group }}</span>
+              <span class="text-xs text-gray-400">{{ keys.length }}</span>
+            </button>
           </div>
+        </div>
 
+        <!-- Active group content panel -->
+        <div
+          v-if="groupedKeys.get(activeGroup)"
+          class="rounded-b-lg rounded-tr-lg border border-t-0 border-gray-200 overflow-hidden"
+        >
           <!-- Column headers -->
-          <div class="grid grid-cols-[10rem_1fr_1fr_1fr] gap-4 px-4 py-2 border-b border-gray-100 text-xs font-medium text-gray-400 uppercase tracking-wide">
+          <div class="grid grid-cols-[10rem_1fr_1fr_1fr] gap-4 px-4 py-2 border-b border-gray-100 text-xs font-medium text-gray-400 uppercase tracking-wide bg-white">
             <div>{{ t("adminTranslations.key") }}</div>
             <div>{{ t("adminTranslations.english") }}</div>
             <div>{{ t("adminTranslations.lao") }}</div>
@@ -127,7 +141,7 @@ async function reset(key: string, locale: Locale) {
 
           <!-- Rows -->
           <div
-            v-for="key in keys"
+            v-for="key in groupedKeys.get(activeGroup) ?? []"
             :key="key"
             class="grid grid-cols-[10rem_1fr_1fr_1fr] gap-4 px-4 py-3 border-b border-gray-50 last:border-b-0 items-start hover:bg-gray-50/50"
           >
