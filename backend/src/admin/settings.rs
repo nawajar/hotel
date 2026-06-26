@@ -130,8 +130,7 @@ async fn update_settings(
     }
 
     if let Some(ref value) = input.number_format {
-        let valid = ["1,234.56", "1.234,56"];
-        if !valid.contains(&value.as_str()) {
+        if value.len() > 20 {
             return Err(AppError::Validation("Invalid number_format value.".to_string()));
         }
         sqlx::query(
