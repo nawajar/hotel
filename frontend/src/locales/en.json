@@ -55,7 +55,17 @@
     "settingsFontSizeSmall": "Small",
     "settingsFontSizeMedium": "Medium",
     "settingsFontSizeLarge": "Large",
-    "settingsNumberFormat": "Number Format"
+    "settingsNumberFormat": "Number Format",
+    "numFmtThousandsLabel": "Thousands",
+    "numFmtDecimalLabel": "Decimal",
+    "numFmtPreview": "Preview",
+    "numFmtThousandsComma": ", (comma)",
+    "numFmtThousandsDot": ". (dot)",
+    "numFmtThousandsSpace": "  (space)",
+    "numFmtThousandsNone": "none",
+    "numFmtDecimalDot": ". (dot)  2 places",
+    "numFmtDecimalComma": ", (comma)  2 places",
+    "numFmtDecimalNone": "none"
   },
   "adminTranslations": {
     "title": "Translations",
@@ -274,7 +284,8 @@
     "pdfDepositsReturned": "Returned: {n} bookings",
     "pdfDepositReturned": "returned",
     "pdfMonthTitle": "Daily Report — {year}-{month}",
-    "pdfTotalDays": "Total ({n} days)"
+    "pdfTotalDays": "Total ({n} days)",
+    "disclaimer": "Each day shows bookings paid on that day, plus unpaid bookings created on that day."
   },
   "calendar": {
     "title": "Calendar",

@@ -144,16 +144,23 @@ export const useSettingsStore = defineStore("settings", {
       }
     },
     formatPrice(price: number): string {
-      const fixed = price.toFixed(2);
+      const fmt = this.numberFormat;
+      const hasDecimal = fmt.endsWith(".56") || fmt.endsWith(",56");
+      const decimalSep = fmt.endsWith(".56") ? "." : fmt.endsWith(",56") ? "," : null;
+      const intExample = hasDecimal ? fmt.slice(0, -3) : fmt;
+      const thousandsSep = intExample.includes(",") ? "," : intExample.includes(".") ? "." : intExample.includes(" ") ? " " : null;
+
+      const places = hasDecimal ? 2 : 0;
+      const fixed = price.toFixed(places);
       const [intPart, decPart] = fixed.split(".");
 
-      if (this.numberFormat === "1.234,56") {
-        const intFormatted = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-        return `${this.priceSymbol}${intFormatted},${decPart}`;
-      } else {
-        const intFormatted = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-        return `${this.priceSymbol}${intFormatted}.${decPart}`;
-      }
+      const intFormatted = thousandsSep
+        ? intPart.replace(/\B(?=(\d{3})+(?!\d))/g, thousandsSep)
+        : intPart;
+
+      return decimalSep && decPart !== undefined
+        ? `${this.priceSymbol}${intFormatted}${decimalSep}${decPart}`
+        : `${this.priceSymbol}${intFormatted}`;
     },
   },
 });

@@ -54,10 +54,63 @@ const FONT_SIZES = computed(() => [
   { label: t("admin.settingsFontSizeLarge"), value: "large" },
 ]);
 
-const NUMBER_FORMATS = computed(() => [
-  { label: "1,234.56", value: "1,234.56" },
-  { label: "1.234,56", value: "1.234,56" },
+const THOUSANDS_SEPS = computed(() => [
+  { label: t("admin.numFmtThousandsComma"), value: "," },
+  { label: t("admin.numFmtThousandsDot"), value: "." },
+  { label: t("admin.numFmtThousandsSpace"), value: " " },
+  { label: t("admin.numFmtThousandsNone"), value: "" },
 ]);
+
+const DECIMAL_SEPS = computed(() => [
+  { label: t("admin.numFmtDecimalDot"), value: ".", disabled: numFmtThousands.value === "." },
+  { label: t("admin.numFmtDecimalComma"), value: ",", disabled: numFmtThousands.value === "," },
+  { label: t("admin.numFmtDecimalNone"), value: "", disabled: false },
+]);
+
+function parseNumberFormat(fmt: string) {
+  const hasDecimal = fmt.endsWith(".56") || fmt.endsWith(",56");
+  const decimalSep = fmt.endsWith(".56") ? "." : fmt.endsWith(",56") ? "," : "";
+  const intExample = hasDecimal ? fmt.slice(0, -3) : fmt;
+  const thousandsSep = intExample.includes(",") ? "," : intExample.includes(".") ? "." : intExample.includes(" ") ? " " : "";
+  return { thousandsSep, decimalSep };
+}
+
+function buildNumberFormat(thousands: string, decimal: string): string {
+  const intPart = thousands ? `1${thousands}234` : "1234";
+  return decimal ? `${intPart}${decimal}56` : intPart;
+}
+
+const numFmtThousands = computed({
+  get: () => parseNumberFormat(settingsForm.value.numberFormat).thousandsSep,
+  set: (v) => {
+    let { decimalSep } = parseNumberFormat(settingsForm.value.numberFormat);
+    if (decimalSep === v && v !== "") decimalSep = "";
+    settingsForm.value.numberFormat = buildNumberFormat(v, decimalSep);
+  },
+});
+
+const numFmtDecimal = computed({
+  get: () => parseNumberFormat(settingsForm.value.numberFormat).decimalSep,
+  set: (v) => {
+    const { thousandsSep } = parseNumberFormat(settingsForm.value.numberFormat);
+    settingsForm.value.numberFormat = buildNumberFormat(thousandsSep, v);
+  },
+});
+
+const numFmtPreview = computed(() => {
+  const fmt = settingsForm.value.numberFormat;
+  const hasDecimal = fmt.endsWith(".56") || fmt.endsWith(",56");
+  const decimalSep = fmt.endsWith(".56") ? "." : fmt.endsWith(",56") ? "," : null;
+  const intExample = hasDecimal ? fmt.slice(0, -3) : fmt;
+  const thousandsSep = intExample.includes(",") ? "," : intExample.includes(".") ? "." : intExample.includes(" ") ? " " : null;
+  const places = hasDecimal ? 2 : 0;
+  const fixed = (1234567.89).toFixed(places);
+  const [intPart, decPart] = fixed.split(".");
+  const intFormatted = thousandsSep ? intPart.replace(/\B(?=(\d{3})+(?!\d))/g, thousandsSep) : intPart;
+  return decimalSep && decPart !== undefined
+    ? `${settingsStore.priceSymbol}${intFormatted}${decimalSep}${decPart}`
+    : `${settingsStore.priceSymbol}${intFormatted}`;
+});
 
 async function handlePing() {
   pingResult.value = "";
@@ -187,12 +240,30 @@ async function handleSaveSettings() {
         </div>
         <div class="flex flex-col gap-1">
           <label class="text-xs font-medium text-gray-700">{{ t("admin.settingsNumberFormat") }}</label>
-          <select
-            v-model="settingsForm.numberFormat"
-            class="rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 bg-white"
-          >
-            <option v-for="nf in NUMBER_FORMATS" :key="nf.value" :value="nf.value">{{ nf.label }}</option>
-          </select>
+          <div class="flex items-center gap-2">
+            <div class="flex flex-col gap-0.5">
+              <span class="text-xs text-gray-400">{{ t("admin.numFmtThousandsLabel") }}</span>
+              <select
+                v-model="numFmtThousands"
+                class="rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 bg-white"
+              >
+                <option v-for="opt in THOUSANDS_SEPS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+              </select>
+            </div>
+            <div class="flex flex-col gap-0.5">
+              <span class="text-xs text-gray-400">{{ t("admin.numFmtDecimalLabel") }}</span>
+              <select
+                v-model="numFmtDecimal"
+                class="rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 bg-white"
+              >
+                <option v-for="opt in DECIMAL_SEPS" :key="opt.value" :value="opt.value" :disabled="opt.disabled">{{ opt.label }}</option>
+              </select>
+            </div>
+            <div class="flex flex-col gap-0.5 self-end pb-2">
+              <span class="text-xs text-gray-400">{{ t("admin.numFmtPreview") }}</span>
+              <span class="text-sm font-mono text-gray-700">{{ numFmtPreview }}</span>
+            </div>
+          </div>
         </div>
         <div class="flex items-center gap-3">
           <button

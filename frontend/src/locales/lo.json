@@ -55,7 +55,17 @@
     "settingsFontSizeSmall": "ນ້ອຍ",
     "settingsFontSizeMedium": "ກາງ",
     "settingsFontSizeLarge": "ໃຫຍ່",
-    "settingsNumberFormat": "ຮູບແບບຕົວເລກ"
+    "settingsNumberFormat": "ຮູບແບບຕົວເລກ",
+    "numFmtThousandsLabel": "ໝາຍພັນ",
+    "numFmtDecimalLabel": "ທົດສະນິຍົມ",
+    "numFmtPreview": "ຕົວຢ່າງ",
+    "numFmtThousandsComma": ", (ຈຸດ​ລ​ຸ​ນ​)",
+    "numFmtThousandsDot": ". (ຈຸດ)",
+    "numFmtThousandsSpace": "  (ຊ່ອງວ່າງ)",
+    "numFmtThousandsNone": "ບໍ່ມີ",
+    "numFmtDecimalDot": ". (ຈຸດ)  2 ຕຳແໜ່ງ",
+    "numFmtDecimalComma": ", (ຈຸດລຸນ)  2 ຕຳແໜ່ງ",
+    "numFmtDecimalNone": "ບໍ່ມີ"
   },
   "adminTranslations": {
     "title": "ການແປພາສາ",
@@ -274,7 +284,8 @@
     "pdfDepositsReturned": "ຄືນແລ້ວ: {n} ການຈອງ",
     "pdfDepositReturned": "ຄືນແລ້ວ",
     "pdfMonthTitle": "ລາຍງານປະຈຳວັນ — {year}-{month}",
-    "pdfTotalDays": "ລວມ ({n} ວັນ)"
+    "pdfTotalDays": "ລວມ ({n} ວັນ)",
+    "disclaimer": "ແຕ່ລະວັນສະແດງການຈອງທີ່ຊຳລະໃນວັນນັ້ນ ລວມທັງການຈອງທີ່ສ້າງໃນວັນນັ້ນແຕ່ຍັງບໍ່ໄດ້ຊຳລະ"
   },
   "calendar": {
     "title": "ປະຕິທິນ",

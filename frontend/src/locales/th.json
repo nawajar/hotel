@@ -55,7 +55,17 @@
     "settingsFontSizeSmall": "เล็ก",
     "settingsFontSizeMedium": "กลาง",
     "settingsFontSizeLarge": "ใหญ่",
-    "settingsNumberFormat": "รูปแบบตัวเลข"
+    "settingsNumberFormat": "รูปแบบตัวเลข",
+    "numFmtThousandsLabel": "หลักพัน",
+    "numFmtDecimalLabel": "ทศนิยม",
+    "numFmtPreview": "ตัวอย่าง",
+    "numFmtThousandsComma": ", (จุลภาค)",
+    "numFmtThousandsDot": ". (จุด)",
+    "numFmtThousandsSpace": "  (เว้นวรรค)",
+    "numFmtThousandsNone": "ไม่มี",
+    "numFmtDecimalDot": ". (จุด)  2 ตำแหน่ง",
+    "numFmtDecimalComma": ", (จุลภาค)  2 ตำแหน่ง",
+    "numFmtDecimalNone": "ไม่มี"
   },
   "adminTranslations": {
     "title": "คำแปล",
@@ -280,7 +290,8 @@
     "pdfDepositsReturned": "คืนแล้ว: {n} การจอง",
     "pdfDepositReturned": "คืนแล้ว",
     "pdfMonthTitle": "รายงานประจำวัน — {year}-{month}",
-    "pdfTotalDays": "รวม ({n} วัน)"
+    "pdfTotalDays": "รวม ({n} วัน)",
+    "disclaimer": "แต่ละวันแสดงการจองที่ชำระในวันนั้น รวมถึงการจองที่สร้างในวันนั้นแต่ยังไม่ชำระ"
   },
   "calendar": {
     "title": "ปฏิทิน",
