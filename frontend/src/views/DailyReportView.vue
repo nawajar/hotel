@@ -128,7 +128,7 @@ async function downloadDayPdf(date: string, rows: DailyReportDetailRow[]) {
       ...rows.map((r, i) => {
         if (r.record_type === "paid") paidRunning += r.net_revenue;
         const depositCell = r.deposit_amount
-          ? `${settingsStore.priceSymbol}${r.deposit_amount.toLocaleString()} (${r.deposit_returned ? t("dailyReport.pdfDepositReturned") : t("dailyReport.depositHeld")})`
+          ? `${settingsStore.formatPrice(r.deposit_amount)} (${r.deposit_returned ? t("dailyReport.pdfDepositReturned") : t("dailyReport.depositHeld")})`
           : "—";
         return [
           String(i + 1),
@@ -143,14 +143,14 @@ async function downloadDayPdf(date: string, rows: DailyReportDetailRow[]) {
               ? t("adminBookings.paymentMethodBankTransfer")
               : "—",
           r.record_type === "paid" ? t("adminBookings.paymentPaid") : t("adminBookings.paymentUnpaid"),
-          r.net_revenue.toLocaleString(),
-          r.record_type === "paid" ? paidRunning.toLocaleString() : "—",
+          settingsStore.formatPrice(r.net_revenue),
+          r.record_type === "paid" ? settingsStore.formatPrice(paidRunning) : "—",
           depositCell,
         ];
       }),
       [
         { content: t("dailyReport.pdfRowSummary", { paid: paidRows.length, unpaid: unpaidRows.length, total: rows.length }), colSpan: 8, styles: { fontStyle: "bold", halign: "right" } },
-        { content: grandTotal.toLocaleString(), styles: { fontStyle: "bold" } },
+        { content: settingsStore.formatPrice(grandTotal), styles: { fontStyle: "bold" } },
         { content: "", styles: { fontStyle: "bold" } },
         { content: depositHeld.length > 0 ? `${depositHeld.length} ${t("dailyReport.depositHeld")}` : "", styles: { fontStyle: "bold" } },
       ],
@@ -165,21 +165,21 @@ async function downloadDayPdf(date: string, rows: DailyReportDetailRow[]) {
   doc.setFont(fontName, "bold");
   doc.text(t("dailyReport.pdfPaidSummary"), 14, finalY);
   doc.setFont(fontName, "normal");
-  doc.text(`${t("dailyReport.cashRevenue")}: ${settingsStore.priceSymbol}${cashTotal.toLocaleString()}`, 14, finalY + 6);
-  doc.text(`${t("dailyReport.bankTransferRevenue")}: ${settingsStore.priceSymbol}${bankTotal.toLocaleString()}`, 14, finalY + 12);
-  if (unspecTotal > 0) doc.text(`${t("dailyReport.unspecifiedRevenue")}: ${settingsStore.priceSymbol}${unspecTotal.toLocaleString()}`, 14, finalY + 18);
+  doc.text(`${t("dailyReport.cashRevenue")}: ${settingsStore.formatPrice(cashTotal)}`, 14, finalY + 6);
+  doc.text(`${t("dailyReport.bankTransferRevenue")}: ${settingsStore.formatPrice(bankTotal)}`, 14, finalY + 12);
+  if (unspecTotal > 0) doc.text(`${t("dailyReport.unspecifiedRevenue")}: ${settingsStore.formatPrice(unspecTotal)}`, 14, finalY + 18);
   const afterPayment = finalY + (unspecTotal > 0 ? 26 : 20);
   doc.setFont(fontName, "bold");
-  doc.text(t("dailyReport.pdfTotalPaid", { amount: paidTotal.toLocaleString() }), 14, afterPayment);
+  doc.text(t("dailyReport.pdfTotalPaid", { amount: settingsStore.formatPrice(paidTotal) }), 14, afterPayment);
   doc.setFont(fontName, "normal");
-  doc.text(t("dailyReport.pdfTotalUnpaid", { amount: unpaidTotal.toLocaleString(), n: unpaidRows.length }), 14, afterPayment + 6);
+  doc.text(t("dailyReport.pdfTotalUnpaid", { amount: settingsStore.formatPrice(unpaidTotal), n: unpaidRows.length }), 14, afterPayment + 6);
   doc.setFont(fontName, "bold");
-  doc.text(t("dailyReport.pdfGrandTotal", { amount: grandTotal.toLocaleString() }), 14, afterPayment + 14);
+  doc.text(t("dailyReport.pdfGrandTotal", { amount: settingsStore.formatPrice(grandTotal) }), 14, afterPayment + 14);
 
   doc.setFont(fontName, "bold");
   doc.text(t("dailyReport.pdfSecurityDeposits"), 14, afterPayment + 24);
   doc.setFont(fontName, "normal");
-  doc.text(t("dailyReport.pdfDepositsHeld", { n: depositHeld.length, amount: depositHeldTotal.toLocaleString() }), 14, afterPayment + 30);
+  doc.text(t("dailyReport.pdfDepositsHeld", { n: depositHeld.length, amount: settingsStore.formatPrice(depositHeldTotal) }), 14, afterPayment + 30);
   doc.text(t("dailyReport.pdfDepositsReturned", { n: depositReturnedCount }), 14, afterPayment + 36);
 
   doc.save(`daily-report-${date}.pdf`);
@@ -226,28 +226,28 @@ async function downloadPdf() {
       ...rows.map((r) => [
         settingsStore.formatDate(r.date),
         String(r.booking_count),
-        r.cash_revenue.toLocaleString(),
-        r.bank_transfer_revenue.toLocaleString(),
-        r.unspecified_revenue.toLocaleString(),
-        r.total_revenue.toLocaleString(),
-        r.cumulative_total.toLocaleString(),
+        settingsStore.formatPrice(r.cash_revenue),
+        settingsStore.formatPrice(r.bank_transfer_revenue),
+        settingsStore.formatPrice(r.unspecified_revenue),
+        settingsStore.formatPrice(r.total_revenue),
+        settingsStore.formatPrice(r.cumulative_total),
         r.deposit_held_count > 0 ? String(r.deposit_held_count) : "—",
-        r.deposit_held_amount > 0 ? r.deposit_held_amount.toLocaleString() : "—",
+        r.deposit_held_amount > 0 ? settingsStore.formatPrice(r.deposit_held_amount) : "—",
         r.unpaid_count > 0 ? String(r.unpaid_count) : "—",
-        r.unpaid_amount > 0 ? r.unpaid_amount.toLocaleString() : "—",
+        r.unpaid_amount > 0 ? settingsStore.formatPrice(r.unpaid_amount) : "—",
       ]),
       [
         { content: t("dailyReport.pdfTotalDays", { n: rows.length }), colSpan: 1, styles: { fontStyle: "bold" } },
         { content: String(t_totals.booking_count), styles: { fontStyle: "bold" } },
-        { content: t_totals.cash_revenue.toLocaleString(), styles: { fontStyle: "bold" } },
-        { content: t_totals.bank_transfer_revenue.toLocaleString(), styles: { fontStyle: "bold" } },
-        { content: t_totals.unspecified_revenue.toLocaleString(), styles: { fontStyle: "bold" } },
-        { content: t_totals.total_revenue.toLocaleString(), styles: { fontStyle: "bold" } },
+        { content: settingsStore.formatPrice(t_totals.cash_revenue), styles: { fontStyle: "bold" } },
+        { content: settingsStore.formatPrice(t_totals.bank_transfer_revenue), styles: { fontStyle: "bold" } },
+        { content: settingsStore.formatPrice(t_totals.unspecified_revenue), styles: { fontStyle: "bold" } },
+        { content: settingsStore.formatPrice(t_totals.total_revenue), styles: { fontStyle: "bold" } },
         { content: "", styles: { fontStyle: "bold" } },
         { content: t_totals.deposit_held_count > 0 ? String(t_totals.deposit_held_count) : "—", styles: { fontStyle: "bold" } },
-        { content: t_totals.deposit_held_amount > 0 ? t_totals.deposit_held_amount.toLocaleString() : "—", styles: { fontStyle: "bold" } },
+        { content: t_totals.deposit_held_amount > 0 ? settingsStore.formatPrice(t_totals.deposit_held_amount) : "—", styles: { fontStyle: "bold" } },
         { content: t_totals.unpaid_count > 0 ? String(t_totals.unpaid_count) : "—", styles: { fontStyle: "bold" } },
-        { content: t_totals.unpaid_amount > 0 ? t_totals.unpaid_amount.toLocaleString() : "—", styles: { fontStyle: "bold" } },
+        { content: t_totals.unpaid_amount > 0 ? settingsStore.formatPrice(t_totals.unpaid_amount) : "—", styles: { fontStyle: "bold" } },
       ],
     ],
     styles: { fontSize: 8, font: fontName },
@@ -262,9 +262,10 @@ async function downloadPdf() {
 <template>
   <AppShell>
     <div class="bg-white rounded-lg border border-gray-200 p-6">
-      <h1 class="text-lg font-semibold text-gray-900 mb-4">
+      <h1 class="text-lg font-semibold text-gray-900 mb-1">
         {{ t("nav.dailyReport") }}
       </h1>
+      <p class="text-xs text-gray-400 mb-4">{{ t("dailyReport.disclaimer") }}</p>
 
       <!-- Unreturned deposit summary -->
       <div
@@ -336,6 +337,7 @@ async function downloadPdf() {
         </button>
       </div>
 
+      <div class="overflow-x-auto">
       <table class="w-full text-sm">
         <thead>
           <tr class="text-left text-gray-500 border-b border-gray-200">
@@ -384,25 +386,25 @@ async function downloadPdf() {
                   <polyline points="9 18 15 12 9 6"/>
                 </svg>
               </td>
-              <td class="py-2 pr-4 font-mono text-gray-900">{{ settingsStore.formatDate(row.date) }}</td>
-              <td class="py-2 pr-4 text-gray-600">{{ row.booking_count }}</td>
-              <td class="py-2 pr-4 text-gray-600">{{ settingsStore.formatPrice(row.cash_revenue) }}</td>
-              <td class="py-2 pr-4 text-gray-600">{{ settingsStore.formatPrice(row.bank_transfer_revenue) }}</td>
-              <td class="py-2 pr-4 text-gray-600">{{ settingsStore.formatPrice(row.unspecified_revenue) }}</td>
-              <td class="py-2 pr-4 text-gray-900 font-medium">{{ settingsStore.formatPrice(row.total_revenue) }}</td>
-              <td class="py-2 pr-4 text-gray-900">{{ settingsStore.formatPrice(row.cumulative_total) }}</td>
-              <td class="py-2 pr-4 text-right">
+              <td class="py-2 pr-4 font-mono text-gray-900 whitespace-nowrap">{{ settingsStore.formatDate(row.date) }}</td>
+              <td class="py-2 pr-4 text-gray-600 whitespace-nowrap">{{ row.booking_count }}</td>
+              <td class="py-2 pr-4 text-gray-600 whitespace-nowrap">{{ settingsStore.formatPrice(row.cash_revenue) }}</td>
+              <td class="py-2 pr-4 text-gray-600 whitespace-nowrap">{{ settingsStore.formatPrice(row.bank_transfer_revenue) }}</td>
+              <td class="py-2 pr-4 text-gray-600 whitespace-nowrap">{{ settingsStore.formatPrice(row.unspecified_revenue) }}</td>
+              <td class="py-2 pr-4 text-gray-900 font-medium whitespace-nowrap">{{ settingsStore.formatPrice(row.total_revenue) }}</td>
+              <td class="py-2 pr-4 text-gray-900 whitespace-nowrap">{{ settingsStore.formatPrice(row.cumulative_total) }}</td>
+              <td class="py-2 pr-4 text-right whitespace-nowrap">
                 <span v-if="row.deposit_held_count > 0" class="inline-flex flex-col items-end leading-tight">
                   <span class="text-xs font-semibold text-amber-600">{{ t("dailyReport.bookingsCount", { n: row.deposit_held_count }) }}</span>
                   <span class="text-xs text-amber-500">{{ settingsStore.formatPrice(row.deposit_held_amount) }}</span>
                 </span>
                 <span v-else class="text-gray-300 text-xs">—</span>
               </td>
-              <td class="py-2 pr-4 text-right">
+              <td class="py-2 pr-4 text-right whitespace-nowrap">
                 <span v-if="row.unpaid_count > 0" class="text-xs font-semibold text-orange-500">{{ row.unpaid_count }}</span>
                 <span v-else class="text-gray-300 text-xs">—</span>
               </td>
-              <td class="py-2 text-right">
+              <td class="py-2 text-right whitespace-nowrap">
                 <span v-if="row.unpaid_amount > 0" class="text-xs text-orange-400">{{ settingsStore.formatPrice(row.unpaid_amount) }}</span>
                 <span v-else class="text-gray-300 text-xs">—</span>
               </td>
@@ -504,29 +506,30 @@ async function downloadPdf() {
           <!-- Totals row -->
           <tr v-if="reportRows && reportRows.length > 0" class="border-t-2 border-gray-300 font-semibold text-gray-900">
             <td class="py-2 pr-2"></td>
-            <td class="py-2 pr-4">{{ t("dailyReport.totals") }}</td>
-            <td class="py-2 pr-4">{{ totals.booking_count }}</td>
-            <td class="py-2 pr-4">{{ settingsStore.formatPrice(totals.cash_revenue) }}</td>
-            <td class="py-2 pr-4">{{ settingsStore.formatPrice(totals.bank_transfer_revenue) }}</td>
-            <td class="py-2 pr-4">{{ settingsStore.formatPrice(totals.unspecified_revenue) }}</td>
-            <td class="py-2 pr-4">{{ settingsStore.formatPrice(totals.total_revenue) }}</td>
-            <td class="py-2 pr-4">—</td>
-            <td class="py-2 pr-4 text-right">
+            <td class="py-2 pr-4 whitespace-nowrap">{{ t("dailyReport.totals") }}</td>
+            <td class="py-2 pr-4 whitespace-nowrap">{{ totals.booking_count }}</td>
+            <td class="py-2 pr-4 whitespace-nowrap">{{ settingsStore.formatPrice(totals.cash_revenue) }}</td>
+            <td class="py-2 pr-4 whitespace-nowrap">{{ settingsStore.formatPrice(totals.bank_transfer_revenue) }}</td>
+            <td class="py-2 pr-4 whitespace-nowrap">{{ settingsStore.formatPrice(totals.unspecified_revenue) }}</td>
+            <td class="py-2 pr-4 whitespace-nowrap">{{ settingsStore.formatPrice(totals.total_revenue) }}</td>
+            <td class="py-2 pr-4 whitespace-nowrap">—</td>
+            <td class="py-2 pr-4 text-right whitespace-nowrap">
               <span v-if="totals.deposit_held_count > 0" class="inline-flex flex-col items-end leading-tight text-amber-600">
                 <span>{{ t("dailyReport.bookingsCount", { n: totals.deposit_held_count }) }}</span>
                 <span class="text-sm">{{ settingsStore.formatPrice(totals.deposit_held_amount) }}</span>
               </span>
               <span v-else class="text-gray-400 font-normal text-xs">—</span>
             </td>
-            <td class="py-2 pr-4 text-right text-orange-500">
+            <td class="py-2 pr-4 text-right text-orange-500 whitespace-nowrap">
               {{ totals.unpaid_count > 0 ? totals.unpaid_count : "—" }}
             </td>
-            <td class="py-2 text-right text-orange-500">
+            <td class="py-2 text-right text-orange-500 whitespace-nowrap">
               {{ totals.unpaid_amount > 0 ? settingsStore.formatPrice(totals.unpaid_amount) : "—" }}
             </td>
           </tr>
         </tbody>
       </table>
+      </div>
     </div>
   </AppShell>
 </template>
